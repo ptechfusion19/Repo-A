@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-card-hover: #22222e;
+            --accent: #e63946;
+            --accent-glow: rgba(230, 57, 70, 0.3);
+            --text-primary: #f1faee;
+            --text-secondary: #a8dadc;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+            --success: #06d6a0;
+            --warning: #ffd166;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at 20% 0%, rgba(230, 57, 70, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(168, 218, 220, 0.06) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            padding: 20px 40px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: inline-flex;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .selection-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .selected-count {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        .selected-count span {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, var(--accent) 0%, #c1121f 100%);
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-delete:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .btn-delete:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-refresh {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-refresh:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--text-secondary);
+        }
+
+        .blogs-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .blog-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .blog-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: transparent;
+            transition: background 0.3s ease;
+        }
+
+        .blog-card:hover {
+            background: var(--bg-card-hover);
+            transform: translateX(4px);
+            border-color: var(--text-muted);
+        }
+
+        .blog-card.selected {
+            border-color: var(--accent);
+            background: rgba(230, 57, 70, 0.08);
+        }
+
+        .blog-card.selected::before {
+            background: var(--accent);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .blog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .blog-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .blog-slug {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            background: var(--bg-primary);
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .blog-meta {
+            display: flex;
+            gap: 20px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .meta-item svg {
+            width: 16px;
+            height: 16px;
+            opacity: 0.7;
+        }
+
+        .checkbox-wrapper {
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            background: var(--bg-primary);
+        }
+
+        .blog-card.selected .custom-checkbox {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .custom-checkbox svg {
+            width: 14px;
+            height: 14px;
+            stroke: white;
+            stroke-width: 3;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .blog-card.selected .custom-checkbox svg {
+            opacity: 1;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .empty-text {
+            color: var(--text-muted);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--success);
+            color: #0a0a0f;
+        }
+
+        .toast.error {
+            background: var(--accent);
+            color: white;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 480px;
+            width: 90%;
+            border: 1px solid var(--border);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(230, 57, 70, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+
+        .modal-icon svg {
+            width: 30px;
+            height: 30px;
+            stroke: var(--accent);
+        }
+
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .modal-text {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-cancel:hover {
+            background: var(--bg-primary);
+        }
+
+        .blog-excerpt {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-top: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-published {
+            background: rgba(6, 214, 160, 0.15);
+            color: var(--success);
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .stats-bar {
+                gap: 24px;
+                padding: 16px 24px;
+            }
+            
+            .blog-title {
+                font-size: 1.2rem;
+            }
+            
+            .modal {
+                padding: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Blog Manager</h1>
+            <p class="subtitle">Manage your published content with ease</p>
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-value" id="totalBlogs">-</div>
+                    <div class="stat-label">Total Blogs</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="selectedBlogs">0</div>
+                    <div class="stat-label">Selected</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="actions-bar">
+            <div class="selection-info">
+                <div class="selected-count">
+                    <span id="selectedText">0</span> blogs selected
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-refresh" onclick="fetchBlogs()">
+                    ↻ Refresh
+                </button>
+                <button class="btn btn-delete" id="deleteBtn" disabled onclick="showDeleteModal()">
+                    🗑 Delete Selected
+                </button>
+            </div>
+        </div>
+
+        <div id="blogsContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p class="loading-text">Loading blogs...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </div>
+            <h2 class="modal-title">Delete Blogs?</h2>
+            <p class="modal-text" id="modalText">
+                Are you sure you want to delete the selected blogs? This action cannot be undone.
+            </p>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="hideDeleteModal()">Cancel</button>
+                <button class="btn btn-delete" onclick="deleteSelectedBlogs()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE = 'https://programmx.com/api/blogs';
+        const CORS_PROXY = 'https://corsproxy.io/?';
+        let blogs = [];
+        let selectedIds = new Set();
+        let useProxy = false;
+
+        // Fetch all published blogs
+        async function fetchBlogs() {
+            const container = document.getElementById('blogsContainer');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Loading blogs...</p>
+                </div>
+            `;
+            selectedIds.clear();
+            updateSelectionUI();
+
+            try {
+                const url = `${API_BASE}?published=true`;
+                const fetchUrl = useProxy ? `${CORS_PROXY}${encodeURIComponent(url)}` : url;
+                
+                let response;
+                try {
+                    response = await fetch(fetchUrl);
+                } catch (corsError) {
+                    // If CORS error, retry with proxy
+                    if (!useProxy) {
+                        useProxy = true;
+                        response = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`);
+                    } else {
+                        throw corsError;
+                    }
+                }
+                
+                if (!response.ok) throw new Error('Failed to fetch blogs');
+                
+                const data = await response.json();
+                // API returns { success: true, data: [...] }
+                blogs = data.data || data.blogs || (Array.isArray(data) ? data : []);
+                
+                renderBlogs();
+                document.getElementById('totalBlogs').textContent = blogs.length;
+            } catch (error) {
+                console.error('Error fetching blogs:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <h3 class="empty-title">Failed to load blogs</h3>
+                        <p class="empty-text">Please check your connection and try again.</p>
+                        <button class="btn btn-refresh" style="margin-top: 20px;" onclick="fetchBlogs()">Try Again</button>
+                    </div>
+                `;
+                document.getElementById('totalBlogs').textContent = '-';
+            }
+        }
+
+        // Render blogs list
+        function renderBlogs() {
+            const container = document.getElementById('blogsContainer');
+            
+            if (blogs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <h3 class="empty-title">No blogs found</h3>
+                        <p class="empty-text">There are no published blogs to display.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `<div class="blogs-grid">${blogs.map((blog, index) => createBlogCard(blog, index)).join('')}</div>`;
+        }
+
+        // Create blog card HTML
+        function createBlogCard(blog, index) {
+            const id = blog._id || blog.id;
+            const title = blog.title || 'Untitled';
+            const slug = blog.slug || '';
+            const excerpt = blog.excerpt || blog.description || blog.content?.substring(0, 150) || '';
+            const date = blog.createdAt || blog.created_at || blog.date;
+            const formattedDate = date ? new Date(date).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            }) : '';
+            const isSelected = selectedIds.has(id);
+
+            return `
+                <div class="blog-card ${isSelected ? 'selected' : ''}" 
+                     data-id="${id}" 
+                     onclick="toggleSelection('${id}')"
+                     style="animation-delay: ${index * 0.05}s">
+                    <div class="blog-header">
+                        <div>
+                            <h3 class="blog-title">${escapeHtml(title)}</h3>
+                            <span class="blog-slug">/${escapeHtml(slug)}</span>
+                        </div>
+                        <div class="checkbox-wrapper">
+                            <div class="custom-checkbox">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    ${excerpt ? `<p class="blog-excerpt">${escapeHtml(excerpt)}</p>` : ''}
+                    <div class="blog-meta">
+                        ${formattedDate ? `
+                            <div class="meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                ${formattedDate}
+                            </div>
+                        ` : ''}
+                        <span class="status-badge status-published">Published</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle blog selection
+        function toggleSelection(id) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
+            } else {
+                selectedIds.add(id);
+            }
+            
+            const card = document.querySelector(`[data-id="${id}"]`);
+            if (card) {
+                card.classList.toggle('selected', selectedIds.has(id));
+            }
+            
+            updateSelectionUI();
+        }
+
+        // Update selection count UI
+        function updateSelectionUI() {
+            const count = selectedIds.size;
+            document.getElementById('selectedBlogs').textContent = count;
+            document.getElementById('selectedText').textContent = count;
+            document.getElementById('deleteBtn').disabled = count === 0;
+        }
+
+        // Show delete confirmation modal
+        function showDeleteModal() {
+            const count = selectedIds.size;
+            document.getElementById('modalText').textContent = 
+                `Are you sure you want to delete ${count} blog${count > 1 ? 's' : ''}? This action cannot be undone.`;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        // Hide delete modal
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+
+        // Delete selected blogs
+        async function deleteSelectedBlogs() {
+            hideDeleteModal();
+            const idsToDelete = Array.from(selectedIds);
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const id of idsToDelete) {
+                try {
+                    const deleteUrl = `${API_BASE}/${id}`;
+                    const fetchUrl = useProxy ? `${CORS_PROXY}${encodeURIComponent(deleteUrl)}` : deleteUrl;
+                    const response = await fetch(fetchUrl, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        successCount++;
+                        // Remove from local state
+                        blogs = blogs.filter(blog => (blog._id || blog.id) !== id);
+                        selectedIds.delete(id);
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    console.error(`Error deleting blog ${id}:`, error);
+                    failCount++;
+                }
+            }
+
+            // Update UI
+            renderBlogs();
+            updateSelectionUI();
+            document.getElementById('totalBlogs').textContent = blogs.length;
+
+            // Show result toast
+            if (successCount > 0 && failCount === 0) {
+                showToast(`Successfully deleted ${successCount} blog${successCount > 1 ? 's' : ''}`, 'success');
+            } else if (failCount > 0 && successCount === 0) {
+                showToast(`Failed to delete ${failCount} blog${failCount > 1 ? 's' : ''}`, 'error');
+            } else {
+                showToast(`Deleted ${successCount}, failed ${failCount}`, successCount > failCount ? 'success' : 'error');
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Close modal on outside click
+        document.getElementById('deleteModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                hideDeleteModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideDeleteModal();
+            }
+        });
+
+        // Initialize
+        fetchBlogs();
+    </script>
+</body>
+</html>
