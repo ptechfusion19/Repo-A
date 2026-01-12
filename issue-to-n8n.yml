@@ -1,0 +1,75 @@
+name: Send Issue to n8n Webhook
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  send-to-n8n:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send Issue Data to n8n
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const webhookUrl = '${{ secrets.N8N_WEBHOOK_URL }}';
+            
+            // Build the payload matching what n8n expects
+            const payload = {
+              action: context.payload.action,
+              issue: {
+                number: context.payload.issue.number,
+                title: context.payload.issue.title,
+                body: context.payload.issue.body || '',
+                html_url: context.payload.issue.html_url,
+                state: context.payload.issue.state,
+                user: {
+                  login: context.payload.issue.user.login
+                },
+                assignee: context.payload.issue.assignee,
+                assignees: context.payload.issue.assignees,
+                labels: context.payload.issue.labels,
+                created_at: context.payload.issue.created_at
+              },
+              repository: {
+                name: context.payload.repository.name,
+                full_name: context.payload.repository.full_name,
+                owner: {
+                  login: context.payload.repository.owner.login
+                },
+                html_url: context.payload.repository.html_url,
+                description: context.payload.repository.description || ''
+              },
+              sender: {
+                login: context.payload.sender.login
+              }
+            };
+            
+            // Add organization only if it exists
+            if (context.payload.organization) {
+              payload.organization = {
+                login: context.payload.organization.login
+              };
+            }
+            
+            console.log('Sending payload to n8n:', JSON.stringify(payload, null, 2));
+            
+            const response = await fetch(webhookUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+            
+            const responseText = await response.text();
+            console.log('Response status:', response.status);
+            console.log('Response body:', responseText);
+            
+            if (!response.ok) {
+              throw new Error(`Webhook failed with status ${response.status}: ${responseText}`);
+            }
+            
+            console.log('Successfully sent issue data to n8n webhook');
+
