@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><style id="programmx-theme-override">
+:root {
+  --programmx-bg-primary: #020617;
+  --programmx-bg-secondary: #0f172a;
+  --programmx-bg-tertiary: #1e293b;
+  --programmx-text-primary: #f8fafc;
+  --programmx-text-secondary: #cbd5e1;
+  --programmx-text-muted: #94a3b8;
+  --programmx-accent: #0DB2B6;
+  --programmx-accent-light: #22d3ee;
+  --programmx-accent-dark: #00a89a;
+  --programmx-border: #334155;
+  --programmx-border-light: #475569;
+  --programmx-code-bg: #0f172a;
+  --programmx-code-text: #e2e8f0;
+}
+html, body {
+  background-color: var(--programmx-bg-primary) !important;
+  color: var(--programmx-text-primary) !important;
+}
+*, *::before, *::after {
+  border-color: var(--programmx-border) !important;
+}
+h1, h2, h3, h4, h5, h6 {
+  color: var(--programmx-text-primary) !important;
+}
+p, li {
+  color: var(--programmx-text-secondary) !important;
+}
+a {
+  color: var(--programmx-accent) !important;
+}
+a:hover {
+  color: var(--programmx-accent-light) !important;
+}
+pre, code {
+  background-color: var(--programmx-code-bg) !important;
+  color: var(--programmx-code-text) !important;
+  border: 1px solid var(--programmx-border-light) !important;
+}
+blockquote {
+  background-color: var(--programmx-bg-secondary) !important;
+  border-left: 4px solid var(--programmx-accent) !important;
+  color: var(--programmx-text-secondary) !important;
+}
+table {
+  background-color: var(--programmx-bg-secondary) !important;
+}
+th {
+  background-color: var(--programmx-bg-tertiary) !important;
+  color: var(--programmx-text-primary) !important;
+}
+button, [class*="btn"] {
+  background-color: var(--programmx-accent) !important;
+  color: var(--programmx-text-primary) !important;
+}
+header, nav, footer {
+  background-color: var(--programmx-bg-secondary) !important;
+}
+.quick-insight {
+  background: linear-gradient(135deg, var(--programmx-accent), var(--programmx-accent-light)) !important;
+  color: var(--programmx-text-primary) !important;
+}
+.blog-post {
+  background-color: var(--programmx-bg-primary) !important;
+  color: var(--programmx-text-primary) !important;
+}
+.post-content {
+  color: var(--programmx-text-secondary) !important;
+}
+.code-block-wrapper {
+  background-color: var(--programmx-code-bg) !important;
+  border: 1px solid var(--programmx-border-light) !important;
+}
+.code-header {
+  background-color: var(--programmx-bg-tertiary) !important;
+  color: var(--programmx-text-primary) !important;
+}
+/* Hide post number elements - Multiple selectors for maximum coverage */
+.post-number,
+[class*="post-number"],
+[class*="post_number"],
+[class*="postNumber"],
+[id*="post-number"],
+[id*="post_number"],
+[id*="postNumber"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  clip: rect(0, 0, 0, 0) !important;
+}
+/* ProgrammX theme specific colors */
+.blog-header {
+  border-bottom-color: var(--programmx-accent) !important;
+}
+.solution-steps {
+  border-left-color: var(--programmx-accent) !important;
+}
+blockquote {
+  border-left-color: var(--programmx-accent) !important;
+}
+/* Ensure ProgrammX teal (#0DB2B6) is used for all accents - Direct color application */
+a,
+a:link,
+a:visited {
+  color: #0DB2B6 !important;
+}
+a:hover,
+a:active,
+a:focus {
+  color: #22d3ee !important;
+}
+button,
+[class*="btn"],
+[class*="button"],
+input[type="button"],
+input[type="submit"] {
+  background-color: #0DB2B6 !important;
+  color: var(--programmx-text-primary) !important;
+  border-color: #0DB2B6 !important;
+}
+button:hover,
+[class*="btn"]:hover,
+[class*="button"]:hover {
+  background-color: #22d3ee !important;
+  border-color: #22d3ee !important;
+}
+.blog-header {
+  border-bottom-color: #0DB2B6 !important;
+}
+.solution-steps {
+  border-left-color: #0DB2B6 !important;
+  background-color: var(--programmx-bg-secondary) !important;
+}
+.solution-steps h2 {
+  color: #0DB2B6 !important;
+}
+blockquote {
+  border-left-color: #0DB2B6 !important;
+  background-color: var(--programmx-bg-secondary) !important;
+}
+.quick-insight {
+  background: linear-gradient(135deg, #0DB2B6, #22d3ee) !important;
+  color: var(--programmx-text-primary) !important;
+}
+/* Apply ProgrammX color to all borders and accents */
+[class*="border"],
+[style*="border"] {
+  border-color: #0DB2B6 !important;
+}
+/* Code block accents */
+.code-header {
+  background-color: var(--programmx-bg-tertiary) !important;
+  color: #0DB2B6 !important;
+  border-bottom-color: #0DB2B6 !important;
+}
+/* ProgrammX container and header styles */
+.programmx-container {
+  background: linear-gradient(to bottom, var(--programmx-bg-primary), var(--programmx-accent)) !important;
+  padding: 20px !important;
+  border-radius: 10px !important;
+  max-width: 800px !important;
+  margin: 20px auto !important;
+}
+.programmx-header {
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 20px !important;
+}
+.programmx-header img {
+  width: 60px !important;
+  height: auto !important;
+  margin-right: 15px !important;
+}
+.programmx-header h1 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  color: var(--programmx-text-primary) !important;
+}
+</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Integrating an Offline ML Model into a Flutter Application">
+<title>Integrating an Offline ML Model into a Flutter Application</title>
+<style>
+/* Blog Post HTML Styles */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #f5f5f5;
+}
+
+.blog-post {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.7;
+    color: #333;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.post-number {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.post-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 30px 0;
+    line-height: 1.3;
+}
+
+.post-content {
+    margin-bottom: 40px;
+}
+
+.post-content p {
+    margin-bottom: 20px;
+    font-size: 17px;
+    color: #444;
+}
+
+.post-content code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 15px;
+    font-family: 'Courier New', monospace;
+    color: #d63384;
+}
+
+.solution-steps {
+    margin-bottom: 40px;
+    padding: 30px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.solution-steps h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #007bff;
+}
+
+.solution-steps ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.solution-steps li {
+    margin-bottom: 16px;
+}
+
+.code-examples {
+    margin-bottom: 40px;
+}
+
+.code-examples h2 {
+    margin-bottom: 20px;
+    color: #1a1a1a;
+}
+
+.code-block-wrapper {
+    margin-bottom: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #e1e4e8;
+    background: #0d1117;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.code-header {
+    padding: 8px 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #c9d1d9;
+    background: #161b22;
+    font-weight: 600;
+}
+
+pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+.security-pitfalls {
+    margin-top: 40px;
+    padding: 24px 20px;
+    border-radius: 8px;
+    background: #fff4e6;
+    border: 1px solid #ffd8a8;
+    border-left: 4px solid #ff9800;
+}
+
+.security-pitfalls h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #d9480f;
+}
+
+.security-pitfalls p {
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    .blog-post {
+        padding: 20px 15px;
+    }
+    .post-title {
+        font-size: 28px;
+    }
+    .solution-steps, .security-pitfalls {
+        padding: 20px 15px;
+    }
+}
+</style>
+</head>
+<body><div class="programmx-container">
+<div class="programmx-header">
+    <img src="https://media.licdn.com/dms/image/v2/D4D0BAQFdJWk29TWi5w/company-logo_200_200/company-logo_200_200/0/1732531337286/programm_x_logo?e=1768435200&v=beta&t=6asupSc-rvHpcrqcodceoCMGCBMKkVfcBFCIPuRottc" alt="ProgrammX Logo">
+    <h1>ProgrammX</h1>
+</div>
+<article class="blog-post">
+  
+  <h1 class="post-title">Integrating an Offline ML Model into a Flutter Application</h1>
+
+  <div class="post-content">
+    <p>Building a Flutter application with integrated machine learning (ML) capabilities that work completely offline is a growing requirement, especially for apps targeting privacy, security, or limited connectivity environments. However, many developers face challenges when trying to add ML models directly into Flutter apps, especially regarding model file formats and compatibility. In this article, we’ll address the problem of integrating an ML model that runs fully offline in a Flutter app, focusing on using TensorFlow Lite (TFLite) models since Flutter primarily supports TFLite for on-device ML inference. We will walk you through how to convert your model to the appropriate format, use compatible Flutter plugins, and ensure smooth integration.</p>
+  </div>
+
+  <div class="solution-steps">
+    <h2>Solution Steps</h2>
+    <ol class="steps-list">
+      <li class="step-item">
+        <strong>Step 1:</strong>
+        <p>Convert your ML Model to TensorFlow Lite Format If your model is trained in TensorFlow, export it as a SavedModel or Keras .h5 file. Use TensorFlow Lite Converter to get a .tflite model. For PyTorch or other frameworks, first convert to ONNX, then to TensorFlowTFLite, or directly export using custom tools. Example TensorFlow conversion command: <code>bash tflite_convert --saved_model_dir=saved_model_dir --output_file=model.tflite </code></p>
+      </li>
+      <li class="step-item">
+        <strong>Step 2:</strong>
+        <p>Include the .tflite model in your Flutter app assets Place the .tflite file inside your Flutter project under assetsmodels. Update pubspec.yaml to include this asset: <code>yaml flutter: assets: assetsmodelsmodel.tflite </code></p>
+      </li>
+      <li class="step-item">
+        <strong>Step 3:</strong>
+        <p>Add and configure the tflite_flutter plugin Add the package dependency in pubspec.yaml: <code>yaml dependencies: tflite_flutter: ^0.10.0 </code> Run flutter pub get.</p>
+      </li>
+      <li class="step-item">
+        <strong>Step 4:</strong>
+        <p>Load and run the model offline in Flutter using tflite_flutter Here’s how you can load the model from assets and run inference: <code>dart import &#039;package:tflite_fluttertflite_flutter.dart&#039;; class MLModel { late Interpreter _interpreter; Future&lt;void&gt; loadModel() async { _interpreter = await Interpreter.fromAsset(&#039;modelsmodel.tflite&#039;); } List runModel(List input) { var output = List.filled(1, 0).reshape(1, 1); _interpreter.run(input, output); return output; } } </code></p>
+      </li>
+      <li class="step-item">
+        <strong>Step 5:</strong>
+        <p>Testing the model Now you can pass input data to the runModel method and use the inference results within your app—all without relying on any network connection.</p>
+      </li>
+    </ol>
+  </div>
+
+  <div class="code-snippets">
+    <h2>Code Examples</h2>
+    <div class="code-block-wrapper">
+      <div class="code-header">python</div>
+      <pre><code class="language-python">import tensorflow as tf
+
+# Load your existing Keras model
+model = tf.keras.models.load_model(&#039;your_model.h5&#039;)
+
+# Convert the model
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+
+# Save the model to disk
+with open(&#039;model.tflite&#039;, &#039;wb&#039;) as f:
+    f.write(tflite_model)</code></pre>
+    </div>
+
+    <div class="code-block-wrapper">
+      <div class="code-header">javascript</div>
+      <pre><code class="language-javascript">// Example of preprocessing input data before feeding into a model
+function preprocessInput(data) {
+  // Assuming data is an array of numbers
+  // Normalize input between 0 and 1
+  return data.map(x =&gt; x / 255.0);
+}
+
+// Example usage
+const rawInput = [255, 128, 64];
+const processedInput = preprocessInput(rawInput);
+
+console.log(processedInput);  // [1, 0.5019607843137255, 0.25098039215686274]</code></pre>
+    </div>
+
+  </div>
+
+  <div class="security-pitfalls">
+    <h2>Common Pitfalls and Gotchas</h2>
+    <ul class="pitfalls-list">
+      <li class="pitfall-item">
+        <strong>Wrong model format:</strong>
+        <span>Using models that are not converted to TFLite will cause your Flutter app to fail during model loading. Asset path issues: Ensure the path specified in Interpreter.fromAsset() matches exactly the location declared in pubspec.yaml under assets. Inputoutput tensor shapes mismatch: The input data shape in Flutter must match the model input tensor format. Double-check the model input signature. Plugin version mismatch: Sometimes breaking changes in tflite_flutter can cause issues; always use the stable release and consult the plugin documentation. Unsupported operations: Some ML model operators are not supported by TFLite. Use TensorFlow Lite compatible layers or apply model optimization techniques.</span>
+      </li>
+    </ul>
+  </div>
+
+</article>
+</div>
+<script>
+(function() {
+    // Remove post number elements on page load
+    function removePostNumbers() {
+        // Remove by class
+        const postNumberElements = document.querySelectorAll('.post-number, [class*="post-number"], [class*="post_number"]');
+        postNumberElements.forEach(el => el.remove());
+       
+        // Remove by text content
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(el => {
+            const text = el.textContent || el.innerText || '';
+            if (text.match(/POST\s*#\s*\d+/i)) {
+                // Check if it's just the post number, not part of larger content
+                if (text.trim().match(/^POST\s*#\s*\d+$/i) || el.classList.contains('post-number')) {
+                    el.remove();
+                }
+            }
+        });
+    }
+   
+    // Run immediately
+    removePostNumbers();
+   
+    // Run after DOM is fully loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removePostNumbers);
+    } else {
+        removePostNumbers();
+    }
+   
+    // Run after a short delay (in case content loads dynamically)
+    setTimeout(removePostNumbers, 100);
+    setTimeout(removePostNumbers, 500);
+})();
+</script></body>
+</html>
