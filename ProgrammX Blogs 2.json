@@ -1,0 +1,430 @@
+{
+  "name": "ProgrammX Blogs 2",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {}
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1ot1-loJJArxMGfC5rgfV6otLlHWFYb29gKT6pW-rWcQ",
+          "mode": "list",
+          "cachedResultName": "Blogs",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ot1-loJJArxMGfC5rgfV6otLlHWFYb29gKT6pW-rWcQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ot1-loJJArxMGfC5rgfV6otLlHWFYb29gKT6pW-rWcQ/edit#gid=0"
+        },
+        "event": "rowUpdate",
+        "options": {
+          "columnsToWatch": [
+            "Status"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1232,
+        -368
+      ],
+      "id": "f82e40dd-84db-4c0b-89b7-5bfaab1cf4f4",
+      "name": "Google Sheets Trigger",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "KIq8Woi9rd2ZSlaZ",
+          "name": "Google Sheet Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f1edf2b9-0d5d-4df8-b1a0-fbeea1e28f6d",
+              "leftValue": "=={{ ($json.Status || $json.status || '').toString().toLowerCase().trim() }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1088,
+        -368
+      ],
+      "id": "3f4c4a69-dcde-421d-98d7-86e6b1281ecf",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nconst results = [];\n\ninputItems.forEach((item, index) => {\n    try {\n        const json = item.json;\n        \n        // Get the link for HTML extraction\n        let link = json.Link || json.link || json.HTML_Link || json.html_link || '';\n        \n        // Remove leading single quote if present\n        if (typeof link === 'string' && link.startsWith(\"'\")) {\n            link = link.substring(1);\n        }\n        \n        let htmlContent = null;\n        let htmlExtracted = false;\n        \n        // Check if link is a data URL (base64 encoded HTML)\n        if (link && typeof link === 'string' && link.trim().startsWith('data:text/html')) {\n            try {\n                const base64Match = link.match(/base64,(.+)$/);\n                if (base64Match && base64Match[1]) {\n                    htmlContent = Buffer.from(base64Match[1], 'base64').toString('utf-8');\n                    htmlExtracted = true;\n                } else {\n                    const parts = link.split(',');\n                    if (parts.length > 1) {\n                        const base64Part = parts.slice(1).join(',');\n                        htmlContent = Buffer.from(base64Part, 'base64').toString('utf-8');\n                        htmlExtracted = true;\n                    }\n                }\n            } catch (error) {\n                htmlContent = null;\n                htmlExtracted = false;\n            }\n        }\n        \n        // Validate extracted HTML\n        if (htmlContent && htmlExtracted) {\n            const trimmed = htmlContent.trim();\n            if (!trimmed.toLowerCase().startsWith('<!doctype') && \n                !trimmed.toLowerCase().startsWith('<html') && \n                !trimmed.startsWith('<')) {\n                htmlExtracted = false;\n            }\n        }\n        \n        // Pass through all original fields + add extracted HTML\n        results.push({\n            json: {\n                ...json,  // Keep all original fields as-is\n                html_content: htmlContent,\n                html_extracted: htmlExtracted,\n                ready_for_database: htmlExtracted && htmlContent && htmlContent.length > 0\n            }\n        });\n        \n    } catch (error) {\n        results.push({\n            json: {\n                ...item.json,  // Keep original fields even on error\n                html_content: null,\n                html_extracted: false,\n                ready_for_database: false,\n                error: error.message\n            }\n        });\n    }\n});\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        -352
+      ],
+      "id": "2f20da9f-42c8-4c8b-acd1-86851dc310f1",
+      "name": "Extract HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nconst results = [];\n\ninputItems.forEach((item) => {\n    const json = item.json;\n    \n    // Debug: Log what we're receiving\n    console.log('Received html_content length:', (json.html_content || '').length);\n    console.log('html_extracted:', json.html_extracted);\n    console.log('featured_image:', json.featured_image);\n    \n    const formattedData = {\n        // Core blog fields\n        title: json.title || '',\n        html_content: json.html_content || '',\n        status: json.status || 'Done',\n        tag: json.tag || json.Tag || '',\n        \n        // Link field\n        link: json.link || json.html_link || '',\n        \n        // Image field (single consolidated field)\n        featured_image: json.featured_image || '',\n        \n        // Status flags\n        html_extracted: json.html_extracted === true || json.html_extracted === 'true',\n        ready_for_database: json.ready_for_database === true || json.ready_for_database === 'true',\n        \n        // Timestamp\n        created_at: new Date().toISOString()\n    };\n    \n    results.push({\n        json: formattedData\n    });\n});\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        -352
+      ],
+      "id": "1bf02bda-ddbc-42dc-87fa-84a4ed04dc63",
+      "name": "Parse Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nconst results = [];\n\ninputItems.forEach((item, index) => {\n    try {\n        const json = item.json;\n        \n        // Get fields from Google Sheets (using correct column names)\n        let title = json.Title || json.title || '';\n        let htmlLink = json.HTML_Link || json['HTML_Link'] || '';\n        let browserLink = json.Browser_Link || json['Browser_Link'] || '';\n        let status = json.Status || json.status || '';\n        let tag = json.Tag || json.tag || '';\n        let imageLink = json['Image Link'] || '';\n        let aiGeneratedImage = json['AI Generated Image'] || '';\n        \n        // Remove leading single quote (used for Google Sheets text formatting)\n        if (typeof title === 'string' && title.startsWith(\"'\")) {\n            title = title.substring(1);\n        }\n        if (typeof htmlLink === 'string' && htmlLink.startsWith(\"'\")) {\n            htmlLink = htmlLink.substring(1);\n        }\n        if (typeof browserLink === 'string' && browserLink.startsWith(\"'\")) {\n            browserLink = browserLink.substring(1);\n        }\n        if (typeof tag === 'string' && tag.startsWith(\"'\")) {\n            tag = tag.substring(1);\n        }\n        if (typeof imageLink === 'string' && imageLink.startsWith(\"'\")) {\n            imageLink = imageLink.substring(1);\n        }\n        if (typeof aiGeneratedImage === 'string' && aiGeneratedImage.startsWith(\"'\")) {\n            aiGeneratedImage = aiGeneratedImage.substring(1);\n        }\n        \n        // Determine which image to use (prioritize Image Link, then AI Generated Image)\n        let featuredImage = '';\n        let imageSource = '';\n        \n        // Trim and check for non-empty values\n        const trimmedImageLink = String(imageLink || '').trim();\n        const trimmedAiImage = String(aiGeneratedImage || '').trim();\n        \n        if (trimmedImageLink.length > 0) {\n            featuredImage = trimmedImageLink;\n            imageSource = 'image_link';\n        } else if (trimmedAiImage.length > 0) {\n            featuredImage = trimmedAiImage;\n            imageSource = 'ai_generated';\n        }\n        \n        let htmlContent = null;\n        let htmlExtracted = false;\n        \n        // Check if HTML_Link is a data URL (after removing the quote prefix)\n        if (htmlLink && typeof htmlLink === 'string' && htmlLink.trim().startsWith('data:text/html')) {\n            try {\n                // Extract base64 part from data URL\n                const base64Match = htmlLink.match(/base64,(.+)$/);\n                if (base64Match && base64Match[1]) {\n                    // Decode base64 to get HTML\n                    htmlContent = Buffer.from(base64Match[1], 'base64').toString('utf-8');\n                    htmlExtracted = true;\n                } else {\n                    // Try direct base64 decode\n                    const parts = htmlLink.split(',');\n                    if (parts.length > 1) {\n                        const base64Part = parts.slice(1).join(',');\n                        htmlContent = Buffer.from(base64Part, 'base64').toString('utf-8');\n                        htmlExtracted = true;\n                    }\n                }\n            } catch (error) {\n                htmlContent = null;\n                htmlExtracted = false;\n                console.error(`Failed to decode base64: ${error.message}`);\n            }\n        }\n        \n        // Validate extracted HTML\n        if (htmlContent && htmlExtracted) {\n            const trimmed = htmlContent.trim();\n            if (!trimmed.toLowerCase().startsWith('<!doctype') && \n                !trimmed.toLowerCase().startsWith('<html') && \n                !trimmed.startsWith('<')) {\n                htmlExtracted = false;\n            }\n        }\n        \n        // Return extracted data\n        results.push({\n            json: {\n                title: title,\n                status: status,\n                tag: tag,\n                html_link: htmlLink,\n                browser_link: browserLink,\n                featured_image: featuredImage,\n                image_source: imageSource,\n                html_content: htmlContent,\n                html_extracted: htmlExtracted,\n                ready_for_database: htmlExtracted && htmlContent && htmlContent.length > 0\n            }\n        });\n        \n    } catch (error) {\n        results.push({\n            json: {\n                title: '',\n                status: '',\n                tag: '',\n                html_link: '',\n                browser_link: '',\n                featured_image: '',\n                image_source: '',\n                html_content: null,\n                html_extracted: false,\n                ready_for_database: false,\n                error: error.message\n            }\n        });\n    }\n});\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        -352
+      ],
+      "id": "f8b201cf-e9f5-4ec1-acd2-b66e67c4f517",
+      "name": "Add Image Link"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nconst results = [];\n\ninputItems.forEach((item) => {\n    const json = item.json;\n    \n    // Get title - prefer lowercase, fallback to Title (with quote stripped)\n    let title = json.title || '';\n    if (!title && json.Title) {\n        title = json.Title;\n        if (typeof title === 'string' && title.startsWith(\"'\")) {\n            title = title.substring(1);\n        }\n    }\n    \n    // Get link - prefer lowercase\n    let link = json.link || '';\n    if (!link && json.Link) {\n        link = json.Link;\n        if (typeof link === 'string' && link.startsWith(\"'\")) {\n            link = link.substring(1);\n        }\n    }\n    \n    // Extract HTML content from base64 link (since html_content is missing)\n    let content = json.html_content || json.content || '';\n    if (!content && link && typeof link === 'string' && link.includes('base64,')) {\n        try {\n            const base64Match = link.match(/base64,(.+)$/);\n            if (base64Match && base64Match[1]) {\n                content = Buffer.from(base64Match[1], 'base64').toString('utf-8');\n            }\n        } catch (e) {\n            content = '';\n        }\n    }\n    \n    // Build output for MongoDB\n    const outputData = {\n        title: title,\n        content: content,\n        category: json.category || json.tag || '',\n        image: json.image || json.featured_image || '',\n        status: json.status || '',\n        html_extracted: content.length > 0,\n        ready_for_database: content.length > 0,\n        created_at: json.created_at || new Date().toISOString()\n    };\n    \n    results.push({\n        json: outputData\n    });\n});\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        -352
+      ],
+      "id": "62d0fef5-ff80-412f-807d-b6af0863b22b",
+      "name": "Rename"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://programmx.com/api/blogs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "title",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "name": "content",
+              "value": "={{ $json.content }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.category }}"
+            },
+            {
+              "name": "image",
+              "value": "={{ $json.image }}"
+            },
+            {
+              "name": "isPublished",
+              "value": "true"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.description }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        640,
+        -128
+      ],
+      "id": "e6cfbd9d-d869-475e-936f-f6884d3cf0c5",
+      "name": "Post on Website"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a 150-character SEO meta description for a blog titled \"{{ $json.title }}\" in the {{ $json.category }} category. Return only the description text.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -304,
+        -112
+      ],
+      "id": "4c59ce86-fb24-482c-a64c-12151eb78e64",
+      "name": "Description Generator",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        80
+      ],
+      "id": "c815c09a-a0fe-476c-8a5a-c28742dd0e1c",
+      "name": "GPT 4.1",
+      "credentials": {
+        "openAiApi": {
+          "id": "H5LXr3raFFEHNnlb",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nconst results = [];\n\ninputItems.forEach((item) => {\n    const json = item.json;\n    \n    // Extract description from AI response\n    let description = '';\n    \n    // AI response with \"text\" field (your current format)\n    if (json.text) {\n        description = json.text.trim();\n    }\n    // OpenAI node output format\n    else if (json.message && json.message.content) {\n        description = json.message.content.trim();\n    }\n    // HTTP Request to OpenAI API format\n    else if (json.choices && json.choices[0]) {\n        description = json.choices[0].message.content.trim();\n    }\n    // Fallback to title\n    else {\n        description = json.title || 'Blog post';\n    }\n    \n    // Clean up description (remove quotes if AI added them)\n    description = description.replace(/^[\"']|[\"']$/g, '').trim();\n    \n    // Ensure max length\n    if (description.length > 160) {\n        description = description.substring(0, 157) + '...';\n    }\n    \n    results.push({\n        json: {\n            description: description\n        }\n    });\n});\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -112
+      ],
+      "id": "764cba4b-d2ac-4d56-aca5-840b4d87f588",
+      "name": "Extract Description"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        160,
+        -336
+      ],
+      "id": "3731f1bf-e888-4450-bae2-157891635109",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nconst results = [];\n\n// Process items in pairs (original + description)\nfor (let i = 0; i < inputItems.length; i += 2) {\n    const originalData = inputItems[i].json;\n    const descriptionData = inputItems[i + 1] ? inputItems[i + 1].json : {};\n    \n    results.push({\n        json: {\n            ...originalData,\n            description: descriptionData.description || descriptionData.text || originalData.title || ''\n        }\n    });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        -336
+      ],
+      "id": "8ee163ed-318c-41e5-b899-b8edd5e9cb7f",
+      "name": "Merge Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and apply the new theme to the content\nfor (const item of $input.all()) {\n  // Check if content exists\n  if (!item.json || !item.json.content) {\n    console.log('Skipping item without content');\n    continue;\n  }\n  \n  // Extract the existing content\n  let content = item.json.content;\n  \n  // Define the new theme CSS that matches the provided images\n  const newThemeCSS = `\n/* ProgrammX Dark Purple/Blue Theme with Cyan Accents */\n:root {\n  --programmx-bg-primary: transparent;\n  --programmx-bg-secondary: rgba(26, 15, 58, 0.3);\n  --programmx-bg-tertiary: rgba(42, 24, 80, 0.3);\n  --programmx-bg-gradient-start: #0a0520;\n  --programmx-bg-gradient-mid: #1a0f54;\n  --programmx-bg-gradient-end: #2d1b69;\n  --programmx-text-primary: #ffffff;\n  --programmx-text-secondary: #e0d9f0;\n  --programmx-text-muted: #b4a5d0;\n  --programmx-accent: #00d9ff;\n  --programmx-accent-light: #5ff4ff;\n  --programmx-accent-dark: #00a8cc;\n  --programmx-border: #3d2a5f;\n  --programmx-border-light: #4d3a6f;\n  --programmx-code-bg: rgba(26, 15, 58, 0.5);\n  --programmx-code-text: #e0d9f0;\n}\n\nhtml, body {\n  background: transparent !important;\n  color: var(--programmx-text-primary) !important;\n  margin: 0 !important;\n  padding: 0 !important;\n}\n\nbody {\n  background: none !important;\n}\n\n*, *::before, *::after {\n  border-color: var(--programmx-border) !important;\n}\n\nh1, h2, h3, h4, h5, h6 {\n  color: var(--programmx-text-primary) !important;\n}\n\np, li {\n  color: var(--programmx-text-secondary) !important;\n}\n\na {\n  color: var(--programmx-accent) !important;\n}\n\na:hover {\n  color: var(--programmx-accent-light) !important;\n}\n\npre, code {\n  background-color: var(--programmx-code-bg) !important;\n  color: var(--programmx-code-text) !important;\n  border: 1px solid var(--programmx-border-light) !important;\n}\n\nblockquote {\n  background-color: var(--programmx-bg-secondary) !important;\n  border-left: 4px solid var(--programmx-accent) !important;\n  color: var(--programmx-text-secondary) !important;\n}\n\ntable {\n  background-color: var(--programmx-bg-secondary) !important;\n}\n\nth {\n  background-color: var(--programmx-bg-tertiary) !important;\n  color: var(--programmx-text-primary) !important;\n}\n\nbutton, [class*=\"btn\"] {\n  background-color: var(--programmx-accent) !important;\n  color: var(--programmx-text-primary) !important;\n  border-radius: 8px !important;\n  transition: all 0.3s ease !important;\n}\n\nbutton:hover, [class*=\"btn\"]:hover {\n  background-color: var(--programmx-accent-light) !important;\n  transform: translateY(-2px) !important;\n  box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3) !important;\n}\n\nheader, nav, footer {\n  background-color: transparent !important;\n}\n\n.quick-insight,\ndiv.quick-insight,\n[class=\"quick-insight\"],\n[class*=\"quick-insight\"],\ndiv[style*=\"background\"] {\n  background: rgba(26, 15, 58, 0.4) !important;\n  color: #ffffff !important;\n  padding: 20px !important;\n  border-radius: 12px !important;\n  border: 1px solid var(--programmx-accent) !important;\n  box-shadow: 0 4px 20px rgba(0, 217, 255, 0.15) !important;\n}\n\n.quick-insight *,\n.quick-insight ul,\n.quick-insight li,\n.quick-insight p,\n.quick-insight span,\n.quick-insight strong,\n.quick-insight b {\n  color: #ffffff !important;\n  background-color: transparent !important;\n}\n\n.blog-post {\n  background: transparent !important;\n  backdrop-filter: none !important;\n  color: var(--programmx-text-primary) !important;\n  box-shadow: none !important;\n  border: none !important;\n  max-width: 100% !important;\n  margin: 0 !important;\n  padding: 0 !important;\n}\n\n.post-content {\n  color: var(--programmx-text-secondary) !important;\n}\n\n.code-block-wrapper {\n  background-color: var(--programmx-code-bg) !important;\n  border: 1px solid var(--programmx-accent) !important;\n  box-shadow: 0 4px 16px rgba(0, 217, 255, 0.1) !important;\n  border-radius: 8px !important;\n}\n\n.code-header {\n  background: rgba(42, 24, 80, 0.6) !important;\n  color: var(--programmx-accent) !important;\n  border-bottom: 2px solid var(--programmx-accent) !important;\n}\n\n.blog-header {\n  border-bottom-color: var(--programmx-accent) !important;\n}\n\n.solution-steps {\n  background: rgba(26, 15, 58, 0.4) !important;\n  border-left: 4px solid var(--programmx-accent) !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 20px rgba(0, 217, 255, 0.15) !important;\n}\n\n.solution-steps h2 {\n  color: var(--programmx-accent) !important;\n}\n\n.security-pitfalls {\n  background: rgba(26, 15, 58, 0.5) !important;\n  border: 1px solid var(--programmx-accent) !important;\n  border-left: 4px solid #ff0055 !important;\n  border-radius: 12px !important;\n  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.15) !important;\n}\n\n.security-pitfalls h2 {\n  color: #ff0055 !important;\n}\n\n.programmx-container {\n  background: transparent !important;\n  padding: 0 !important;\n  border-radius: 0 !important;\n  max-width: 100% !important;\n  margin: 0 !important;\n  box-shadow: none !important;\n}\n\n/* Hide ProgrammX header with logo and text */\n.programmx-header {\n  display: none !important;\n  visibility: hidden !important;\n}\n\n.post-title {\n  color: var(--programmx-accent) !important;\n  text-shadow: 0 0 20px rgba(0, 217, 255, 0.3) !important;\n}\n\n/* Remove network grid background effect */\nbody::before {\n  display: none !important;\n}\n`;\n\n  // Replace the existing theme CSS in the <style id=\"programmx-theme-override\"> tag\n  if (content.includes('<style id=\"programmx-theme-override\">')) {\n    content = content.replace(\n      /<style id=\"programmx-theme-override\">[\\s\\S]*?<\\/style>/,\n      `<style id=\"programmx-theme-override\">${newThemeCSS}</style>`\n    );\n  }\n  \n  // Remove the ProgrammX header div completely from the HTML\n  if (content.includes('programmx-header')) {\n    content = content.replace(\n      /<div class=\"programmx-container\">\\s*<div class=\"programmx-header\">[\\s\\S]*?<\\/div>\\s*<article/,\n      '<div class=\"programmx-container\"><article'\n    );\n  }\n  \n  // Update the item's content\n  item.json.content = content;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -336
+      ],
+      "id": "9282b140-1758-4bd6-a4e9-97e8b624988c",
+      "name": "Apply Theme"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Add Image Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract HTML": {
+      "main": [
+        [
+          {
+            "node": "Parse Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Data": {
+      "main": [
+        [
+          {
+            "node": "Rename",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Image Link": {
+      "main": [
+        [
+          {
+            "node": "Extract HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename": {
+      "main": [
+        [
+          {
+            "node": "Description Generator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Description Generator": {
+      "main": [
+        [
+          {
+            "node": "Extract Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT 4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Description Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Description": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Apply Theme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Theme": {
+      "main": [
+        [
+          {
+            "node": "Post on Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "957bb898-2dd7-4335-9613-c5733e3175a1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "151305d708accaf9ba7df3ae300984e7c14a108b131ed2d081a3bd48f670f5c4"
+  },
+  "id": "fxQzLkUNirb9E8M2",
+  "tags": []
+}
