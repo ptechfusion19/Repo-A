@@ -1,0 +1,242 @@
+{
+  "name": "Repo-A → Repo-B Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "owner": "ptechfusion19",
+        "repository": "Repo-A",
+        "events": ["push"]
+      },
+      "id": "github-trigger",
+      "name": "GitHub Trigger",
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "repo-a-push-webhook",
+      "credentials": {
+        "githubApi": {
+          "id": "1",
+          "name": "GitHub API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "main-branch",
+              "leftValue": "={{ $json.body.ref }}",
+              "rightValue": "refs/heads/main",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "not-sync-commit",
+              "leftValue": "={{ $json.body.head_commit.message }}",
+              "rightValue": "Sync from Repo",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "not-bot",
+              "leftValue": "={{ $json.body.head_commit.author.name }}",
+              "rightValue": "github-actions[bot]",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-filter",
+      "name": "IF Main Branch",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"branchName\": \"sync-from-repo-a-{{ $now.toMillis() }}\",\n  \"commitMessage\": \"{{ $('GitHub Trigger').item.json.body.head_commit.message }}\",\n  \"commitSha\": \"{{ $('GitHub Trigger').item.json.body.after }}\",\n  \"authorName\": \"{{ $('GitHub Trigger').item.json.body.head_commit.author.name }}\"\n}",
+        "options": {}
+      },
+      "id": "set-vars",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.github.com/repos/ptechfusion19/Repo-B/git/refs/heads/main",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-sha",
+      "name": "Get Repo-B Main SHA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.github.com/repos/ptechfusion19/Repo-B/git/refs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ref\": \"refs/heads/{{ $('Set Variables').item.json.branchName }}\",\n  \"sha\": \"{{ $json.object.sha }}\"\n}",
+        "options": {}
+      },
+      "id": "create-branch",
+      "name": "Create Branch in Repo-B",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.github.com/repos/ptechfusion19/Repo-B/pulls",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"🔄 Sync from Repo-A: {{ $('Set Variables').item.json.commitMessage }}\",\n  \"body\": \"## Automated Sync from Repository A\\n\\n**Commit Message:** {{ $('Set Variables').item.json.commitMessage }}\\n\\n**Commit SHA:** `{{ $('Set Variables').item.json.commitSha }}`\\n\\n**Author:** {{ $('Set Variables').item.json.authorName }}\\n\\n---\\n*Auto-generated by n8n workflow*\",\n  \"head\": \"{{ $('Set Variables').item.json.branchName }}\",\n  \"base\": \"main\"\n}",
+        "options": {}
+      },
+      "id": "create-pr",
+      "name": "Create Pull Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "GitHub Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "GitHub Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF Main Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Main Branch": {
+      "main": [
+        [
+          {
+            "node": "Set Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "Get Repo-B Main SHA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Repo-B Main SHA": {
+      "main": [
+        [
+          {
+            "node": "Create Branch in Repo-B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Branch in Repo-B": {
+      "main": [
+        [
+          {
+            "node": "Create Pull Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "GitHub Sync"
+    }
+  ],
+  "triggerCount": 1
+}
