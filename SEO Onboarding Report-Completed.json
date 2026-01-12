@@ -1,0 +1,700 @@
+{
+  "name": "SEO Onboarding Report-Completed",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "OnboardingReport",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -848,
+        272
+      ],
+      "id": "7f629162-42db-444b-bc6e-19e27f00d2ae",
+      "name": "Webhook",
+      "webhookId": "f8594322-f696-4728-b6f3-c2b4e93cbb0e"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and validate input parameters\nconst targetUrl = $input.first().json.target_url || $input.first().json.body?.target_url;\nconst location = $input.first().json.location || $input.first().json.body?.location || 'United Kingdom';\nconst reportType = $input.first().json.report_type || $input.first().json.body?.report_type || 'onboarding';\nconst email = $input.first().json.email || $input.first().json.body?.email;\nconst pastReportId = $input.first().json.past_report_id || $input.first().json.body?.past_report_id;\n\n// Validate inputs\nif (!targetUrl) {\n  throw new Error('target_url is required');\n}\n\n// Clean URL\nconst cleanUrl = targetUrl.replace(/^https?:\\/\\//, '').replace(/\\/$/, '');\n\nreturn {\n  target_url: cleanUrl,\n  location: location,\n  report_type: reportType,\n  email: email,\n  past_report_id: pastReportId,\n  timestamp: new Date().toISOString(),\n  is_update: reportType === 'update'\n};"
+      },
+      "id": "15910a18-2d31-4dc8-95eb-5cc4da6e1181",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/on_page/task_post",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=[\n  {\n    \"target\": \"https://{{ $json.target_url }}\",\n    \"max_crawl_pages\": 30,\n    \"load_resources\": false,\n    \"enable_javascript\": true,\n    \"validate_micromarkup\": true,\n    \"check_spell\": false,\n    \"check_spell_language\": \"en\"\n  }\n]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -368,
+        64
+      ],
+      "id": "86057e73-3199-41a5-bfe8-91f6dfa53771",
+      "name": "OnPage Task Post",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "861cV9KnepswAcIx",
+          "name": "DataForSeo"
+        },
+        "httpHeaderAuth": {
+          "id": "C6umn6JHLnv6bU1q",
+          "name": "DataForSeo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/dataforseo_labs/google/domain_rank_overview/live",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=[\n  {\n    \"target\": \"{{ $json.target_url }}\",\n    \"language_name\": \"English\",\n    \"location_name\": \"{{ $json.location }}\"\n  }\n]",
+        "options": {}
+      },
+      "id": "084cbea5-f81e-4a44-861c-4195e0e8d9df",
+      "name": "Domain Rank Overview",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        112,
+        112
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "861cV9KnepswAcIx",
+          "name": "DataForSeo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/dataforseo_labs/google/ranked_keywords/live",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=[\n  {\n    \"target\": \"{{ $json.target_url }}\",\n    \"location_name\": \"{{ $json.location }}\",\n    \"language_name\": \"English\",\n    \"limit\": 1000,\n    \"filters\": [\"keyword_data.keyword_info.search_volume\", \">\", 0],\n    \"order_by\": [\"ranked_serp_element.serp_item.rank_absolute,asc\"]\n  }\n]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        112,
+        304
+      ],
+      "id": "c0a49768-9dab-46eb-a6d4-062a9ca91773",
+      "name": "Ranked Keywords",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "861cV9KnepswAcIx",
+          "name": "DataForSeo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/backlinks/summary/live",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=[\n  {\n    \"target\": \"{{ $json.target_url }}\",\n    \"internal_list_limit\": 10,\n    \"include_subdomains\": true\n  }\n]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        112,
+        496
+      ],
+      "id": "1f63de51-bf9a-48c4-abea-4a2a1bd078a9",
+      "name": "Backlinks Summary",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "861cV9KnepswAcIx",
+          "name": "DataForSeo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Wait for OnPage task to complete (5 minutes)\nawait new Promise(resolve => setTimeout(resolve, 300000));\nreturn $input.all();"
+      },
+      "id": "a4a116a6-02c7-41be-b378-2c3df436d734",
+      "name": "Wait for OnPage Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.dataforseo.com/v3/on_page/summary",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=[{\"id\": \"{{ $json.tasks[0].id }}\"}]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        112,
+        -80
+      ],
+      "id": "2fb94ae8-c012-4d0e-8ddb-52297e6f5d04",
+      "name": "OnPage Summary",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "861cV9KnepswAcIx",
+          "name": "DataForSeo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Domain Rank Overview - Extract relevant metrics\nconst input = $input.first().json;\n\n// Check if API call was successful\nif (input.status_code !== 20000 || !input.tasks?.[0]?.result?.[0]) {\n  return {\n    success: false,\n    error: input.tasks?.[0]?.status_message || 'Domain Rank API failed',\n    domainRank: null\n  };\n}\n\nconst result = input.tasks[0].result[0];\nconst metrics = result.items?.[0]?.metrics?.organic || {};\n\n// Extract only relevant data for the report\nreturn {\n  success: true,\n  domainRank: {\n    // Basic Info\n    target: result.target,\n    location: result.location_code,\n    language: result.language_code,\n    \n    // Position Distribution\n    positions: {\n      top3: (metrics.pos_1 || 0) + (metrics.pos_2_3 || 0),\n      top10: (metrics.pos_1 || 0) + (metrics.pos_2_3 || 0) + (metrics.pos_4_10 || 0),\n      page2: metrics.pos_11_20 || 0,  // Opportunities!\n      page3: metrics.pos_21_30 || 0,\n      page4Plus: (metrics.pos_31_40 || 0) + (metrics.pos_41_50 || 0) + \n                 (metrics.pos_51_60 || 0) + (metrics.pos_61_70 || 0) + \n                 (metrics.pos_71_80 || 0) + (metrics.pos_81_90 || 0) + \n                 (metrics.pos_91_100 || 0)\n    },\n    \n    // Traffic & Value\n    estimatedTrafficValue: Math.round(metrics.etv || 0),\n    totalKeywords: metrics.count || 0,\n    estimatedPaidTrafficCost: Math.round((metrics.estimated_paid_traffic_cost || 0) * 100) / 100,\n    \n    // Keyword Movement\n    movement: {\n      newKeywords: metrics.is_new || 0,\n      improved: metrics.is_up || 0,\n      declined: metrics.is_down || 0,\n      lost: metrics.is_lost || 0\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        112
+      ],
+      "id": "d64be1aa-efe4-4231-8277-6a75644c8531",
+      "name": "Parse Domain Rank"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Ranked Keywords - Extract and analyze keyword data\nconst input = $input.first().json;\n\n// Check if API call was successful\nif (input.status_code !== 20000 || !input.tasks?.[0]?.result?.[0]) {\n  return {\n    success: false,\n    error: input.tasks?.[0]?.status_message || 'Ranked Keywords API failed',\n    keywords: null\n  };\n}\n\nconst result = input.tasks[0].result[0];\nconst items = result.items || [];\nconst target = result.target || '';\n\n// Extract domain name for branded keyword detection\nconst domainName = target.replace(/^www\\./, '').split('.')[0].toLowerCase();\n\n// Initialize counters\nlet brandedCount = 0;\nlet unbrandedCount = 0;\nlet totalSearchVolume = 0;\nlet totalETV = 0;\n\n// Position buckets\nconst positionBuckets = {\n  top3: [],\n  top10: [],\n  page2Opportunities: [],  // Positions 11-20 - Ready to push!\n  page3: [],\n  deepPositions: []\n};\n\n// Process each keyword\nconst processedKeywords = items.map(item => {\n  const keyword = item.keyword_data?.keyword || '';\n  const keywordLower = keyword.toLowerCase();\n  const searchVolume = item.keyword_data?.keyword_info?.search_volume || 0;\n  const rank = item.ranked_serp_element?.serp_item?.rank_absolute || 999;\n  const url = item.ranked_serp_element?.serp_item?.url || '';\n  const etv = item.ranked_serp_element?.serp_item?.etv || 0;\n  const cpc = item.keyword_data?.keyword_info?.cpc || 0;\n  const difficulty = item.keyword_data?.keyword_properties?.keyword_difficulty || 0;\n  const intent = item.keyword_data?.search_intent_info?.main_intent || 'unknown';\n  const isNew = item.ranked_serp_element?.serp_item?.rank_changes?.is_new || false;\n  \n  // Determine if branded\n  const isBranded = keywordLower.includes(domainName);\n  if (isBranded) {\n    brandedCount++;\n  } else {\n    unbrandedCount++;\n  }\n  \n  totalSearchVolume += searchVolume;\n  totalETV += etv;\n  \n  const keywordData = {\n    keyword,\n    rank,\n    searchVolume,\n    etv: Math.round(etv * 100) / 100,\n    cpc: Math.round(cpc * 100) / 100,\n    difficulty,\n    intent,\n    url,\n    isBranded,\n    isNew\n  };\n  \n  // Categorize by position\n  if (rank <= 3) {\n    positionBuckets.top3.push(keywordData);\n  } else if (rank <= 10) {\n    positionBuckets.top10.push(keywordData);\n  } else if (rank <= 20) {\n    positionBuckets.page2Opportunities.push(keywordData);\n  } else if (rank <= 30) {\n    positionBuckets.page3.push(keywordData);\n  } else {\n    positionBuckets.deepPositions.push(keywordData);\n  }\n  \n  return keywordData;\n});\n\n// Sort opportunities by search volume (highest first)\npositionBuckets.page2Opportunities.sort((a, b) => b.searchVolume - a.searchVolume);\npositionBuckets.top10.sort((a, b) => a.rank - b.rank);\npositionBuckets.top3.sort((a, b) => a.rank - b.rank);\n\n// Calculate branded/unbranded percentages\nconst totalKeywords = items.length;\nconst brandedPercent = totalKeywords > 0 ? Math.round((brandedCount / totalKeywords) * 100) : 0;\nconst unbrandedPercent = totalKeywords > 0 ? Math.round((unbrandedCount / totalKeywords) * 100) : 0;\n\nreturn {\n  success: true,\n  keywords: {\n    // Summary Stats\n    summary: {\n      totalKeywords,\n      totalSearchVolume,\n      totalETV: Math.round(totalETV * 100) / 100,\n      brandedCount,\n      unbrandedCount,\n      brandedPercent,\n      unbrandedPercent\n    },\n    \n    // Position Distribution\n    distribution: {\n      top3Count: positionBuckets.top3.length,\n      top10Count: positionBuckets.top3.length + positionBuckets.top10.length,\n      page2Count: positionBuckets.page2Opportunities.length,\n      page3Count: positionBuckets.page3.length,\n      deepCount: positionBuckets.deepPositions.length\n    },\n    \n    // Top Performers (Top 10 by rank)\n    topPerformers: [...positionBuckets.top3, ...positionBuckets.top10].slice(0, 10),\n    \n    // Quick Win Opportunities (Page 2 keywords with high volume)\n    quickWinOpportunities: positionBuckets.page2Opportunities.slice(0, 10),\n    \n    // All keywords for detailed analysis\n    allKeywords: processedKeywords.slice(0, 50)  // Limit to 50 for report\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        304
+      ],
+      "id": "7a4e322b-e27f-4248-ab8b-3d3449c504c7",
+      "name": "Parse Ranked Keywords"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse OnPage Summary - Extract technical SEO metrics\nconst input = $input.first().json;\nconst task = input.tasks?.[0];\n\n// Check if task is still in queue\nif (task?.status_code === 40602) {\n  return {\n    success: false,\n    status: 'in_queue',\n    message: 'OnPage analysis is still processing. Please wait and retry.',\n    onPage: null\n  };\n}\n\n// Check if API call was successful\nif (input.status_code !== 20000 || !task?.result?.[0]) {\n  return {\n    success: false,\n    status: 'error',\n    error: task?.status_message || 'OnPage API failed',\n    onPage: null\n  };\n}\n\nconst result = task.result[0];\nconst crawl = result.crawl_progress || {};\n\nreturn {\n  success: true,\n  status: 'complete',\n  onPage: {\n    // Crawl Info\n    crawlProgress: crawl,\n    pagesCrawled: result.pages_crawled || 0,\n    pagesInQueue: result.pages_in_queue || 0,\n    \n    // Technical Issues\n    issues: {\n      critical: result.page_metrics?.checks?.critical || 0,\n      warnings: result.page_metrics?.checks?.warnings || 0,\n      notices: result.page_metrics?.checks?.notices || 0\n    },\n    \n    // Page Metrics\n    pageMetrics: {\n      brokenLinks: result.page_metrics?.broken_links || 0,\n      brokenResources: result.page_metrics?.broken_resources || 0,\n      duplicateTitle: result.page_metrics?.duplicate_title || 0,\n      duplicateDescription: result.page_metrics?.duplicate_description || 0,\n      duplicateContent: result.page_metrics?.duplicate_content || 0\n    },\n    \n    // Performance\n    performance: {\n      avgPageLoadTime: result.page_metrics?.page_timing?.time_to_interactive || 0,\n      https: result.page_metrics?.checks?.no_https || 0,\n      mobileUsability: result.page_metrics?.checks?.is_mobile_friendly || false\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        -80
+      ],
+      "id": "901234b3-e6d5-428b-8b9c-68aa0a604bb5",
+      "name": "Parse OnPage Summary"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Backlinks Summary - Extract backlink metrics\nconst input = $input.first().json;\nconst task = input.tasks?.[0];\n\n// Check for access denied error\nif (task?.status_code === 40204) {\n  return {\n    success: false,\n    error: 'Backlinks API requires subscription activation',\n    message: 'Visit https://app.dataforseo.com/backlinks-subscription to activate',\n    backlinks: null\n  };\n}\n\n// Check if API call was successful\nif (input.status_code !== 20000 || !task?.result?.[0]) {\n  return {\n    success: false,\n    error: task?.status_message || 'Backlinks API failed',\n    backlinks: null\n  };\n}\n\nconst result = task.result[0];\n\nreturn {\n  success: true,\n  backlinks: {\n    // Core Metrics\n    totalBacklinks: result.backlinks || 0,\n    referringDomains: result.referring_domains || 0,\n    referringMainDomains: result.referring_main_domains || 0,\n    referringIPs: result.referring_ips || 0,\n    \n    // Link Types\n    dofollow: result.dofollow || 0,\n    nofollow: result.nofollow || 0,\n    \n    // Quality Indicators\n    rank: result.rank || 0,\n    brokenBacklinks: result.broken_backlinks || 0,\n    \n    // Calculations\n    dofollowPercent: result.backlinks > 0 \n      ? Math.round((result.dofollow / result.backlinks) * 100) \n      : 0\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        496
+      ],
+      "id": "03dffce0-16fa-4c85-915f-ad0222f947ee",
+      "name": "Parse Backlinks Summary"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        704,
+        32
+      ],
+      "id": "99f3a8b7-94f3-45bf-9545-3a16d1bdb7b4",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        400
+      ],
+      "id": "51c306bf-fa86-44cc-b8ad-e1ee93dc0074",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        208
+      ],
+      "id": "b86a8e09-ebf1-4180-8b70-703a86b6ad3f",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate All Data - Combine into single object\nconst allInputs = $input.all();\n\nconst aggregatedData = {\n  onPage: null,\n  domainRank: null,\n  keywords: null,\n  backlinks: null,\n  metadata: {\n    generatedAt: new Date().toISOString(),\n    reportType: 'onboarding'\n  }\n};\n\nfor (const item of allInputs) {\n  const data = item.json;\n  \n  if (data.onPage !== undefined) {\n    aggregatedData.onPage = data;\n  } else if (data.domainRank !== undefined) {\n    aggregatedData.domainRank = data;\n  } else if (data.keywords !== undefined) {\n    aggregatedData.keywords = data;\n  } else if (data.backlinks !== undefined) {\n    aggregatedData.backlinks = data;\n  }\n}\n\nreturn aggregatedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        208
+      ],
+      "id": "63f6840d-fdd0-4a4b-95e6-9439d747ec4d",
+      "name": "Aggregate Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.userPrompt }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "={{ $json.systemPrompt }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1680,
+        208
+      ],
+      "id": "57734f70-1f2a-4b99-a9c5-299994f6a317",
+      "name": "Onboarding Report Generator",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1680,
+        416
+      ],
+      "id": "2163107a-aba7-4cc7-b68b-e0ec730c5459",
+      "name": "GPT-4.1 mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "H5LXr3raFFEHNnlb",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build AI Prompt - Using Project Template Style\nconst data = $input.first().json;\n\n// Extract data\nconst domainRank = data.domainRank?.domainRank || {};\nconst keywords = data.keywords?.keywords || {};\nconst backlinks = data.backlinks?.backlinks || {};\nconst onPage = data.onPage?.onPage || {};\n\n// Format keywords lists\nconst formatKeywords = (kwList, limit = 10) => {\n  if (!kwList || kwList.length === 0) return '*No keywords in this category*';\n  return kwList.slice(0, limit).map((kw, i) => \n    `${i + 1}. **${kw.keyword}** (Rank: ${kw.rank}, Volume: ${kw.searchVolume}/mo, CPC: $${kw.cpc})`\n  ).join('\\n');\n};\n\nconst systemPrompt = `You are a Senior UK SEO Strategist with 15+ years of experience specializing in data-driven, consultative SEO audits.\n\nYour expertise includes:\n- Technical SEO and site architecture optimization\n- Content strategy and keyword research\n- Link building and authority development\n- Local SEO and schema markup implementation\n- Conversion rate optimization\n- ROI-focused strategy development\n\nCommunication Style:\n- Professional yet approachable and empathetic\n- Data-driven with clear explanations for non-technical clients\n- Strategic and forward-thinking\n- Focused on business impact and ROI\n- Honest about challenges while emphasizing opportunities\n\nYour reports should:\n- Use UK English spelling and terminology\n- Reference UK market conditions and search behavior\n- Provide actionable, prioritized recommendations\n- Include realistic timelines and effort estimates\n- Balance quick wins with long-term strategic initiatives\n\nFormat all reports in well-structured Markdown with:\n- Clear hierarchy (# for main headings, ## for sections, ### for subsections)\n- Bullet points for lists\n- **Bold** for emphasis on key metrics\n- Tables for comparative data when appropriate\n- Emojis sparingly for visual interest (✓ ✗ 📈 📊 🎯 ⚡)`;\n\nconst userPrompt = `# Client Onboarding Report: ${domainRank.target || 'Unknown Website'}\n\nGenerate a comprehensive, professional SEO onboarding audit for **${domainRank.target || 'Unknown Website'}** based on the analysis below.\n\n---\n\n## DATA ANALYSIS SUMMARY\n\n### 1. Authority & Traffic Metrics\n\n**Organic Performance:**\n- Estimated Monthly Traffic Value: $${domainRank.estimatedTrafficValue || 0}\n- Total Ranking Keywords: ${domainRank.totalKeywords || 0}\n- Top 3 Positions: ${domainRank.positions?.top3 || 0}\n- Top 10 Positions: ${domainRank.positions?.top10 || 0}\n- Page 2 Opportunities: ${domainRank.positions?.page2 || 0}\n- Page 3+ Positions: ${(domainRank.positions?.page3 || 0) + (domainRank.positions?.page4Plus || 0)}\n\n**Keyword Movement:**\n- New Keywords: +${domainRank.movement?.newKeywords || 0}\n- Improved: +${domainRank.movement?.improved || 0}\n- Declined: -${domainRank.movement?.declined || 0}\n- Lost: -${domainRank.movement?.lost || 0}\n\n**Backlink Profile:**\n- Total Backlinks: ${backlinks.totalBacklinks || 0}\n- Referring Domains: ${backlinks.referringDomains || 0}\n- Domain Rank: ${backlinks.rank || 0}\n- Dofollow Links: ${backlinks.dofollow || 0}\n- Nofollow Links: ${backlinks.nofollow || 0}\n- Broken Backlinks: ${backlinks.brokenBacklinks || 0}\n\n---\n\n### 2. Keyword Analysis\n\n**Overview:**\n- Total Keywords: ${keywords.summary?.totalKeywords || 0}\n- Total Search Volume: ${keywords.summary?.totalSearchVolume || 0}/month\n- **Branded Keywords:** ${keywords.summary?.brandedCount || 0} (${keywords.summary?.brandedPercent || 0}%)\n- **Unbranded Keywords:** ${keywords.summary?.unbrandedCount || 0} (${keywords.summary?.unbrandedPercent || 0}%)\n\n**Position Distribution:**\n- Top 3: ${keywords.distribution?.top3Count || 0}\n- Top 10: ${keywords.distribution?.top10Count || 0}\n- **Page 2 Opportunities:** ${keywords.distribution?.page2Count || 0}\n- Page 3: ${keywords.distribution?.page3Count || 0}\n- Deep (30+): ${keywords.distribution?.deepCount || 0}\n\n**Top Performing Keywords:**\n${formatKeywords(keywords.topPerformers, 10)}\n\n**🎯 Page 2 Quick Win Opportunities:**\n${formatKeywords(keywords.quickWinOpportunities, 10)}\n\n**Deeper Position Keywords (Growth Potential):**\n${formatKeywords((keywords.allKeywords || []).filter(k => k.rank > 30), 8)}\n\n---\n\n### 3. Technical SEO (OnPage Analysis)\n- Crawl Status: ${onPage.crawlProgress || 'N/A'}\n- Pages Crawled: ${onPage.pagesCrawled || 0}\n- Critical Issues: ${onPage.issues?.critical ?? 'N/A'}\n- Warnings: ${onPage.issues?.warnings ?? 'N/A'}\n- Broken Links: ${onPage.pageMetrics?.brokenLinks ?? 'N/A'}\n- Duplicate Titles: ${onPage.pageMetrics?.duplicateTitle ?? 'N/A'}\n- Duplicate Descriptions: ${onPage.pageMetrics?.duplicateDescription ?? 'N/A'}\n\n---\n\n## YOUR TASK: Generate Professional SEO Onboarding Report\n\nUsing the data above, create a comprehensive, strategic SEO onboarding report with this **exact structure**:\n\n### 1. Executive Summary\n- Welcome message addressing the client professionally\n- Current state overview (2-3 sentences)\n- Biggest opportunities identified (3-4 key points)\n- Expected ROI and realistic timeline\n- Overall SEO health score (rate out of 100)\n\n### 2. Current Performance Analysis\n\n#### 2.1 Visibility & Rankings\n- Overall visibility score interpretation\n- Traffic value assessment\n- Competitive positioning analysis\n- Trend analysis\n\n#### 2.2 Keyword Positioning Analysis\n- **Branded vs Unbranded Split Analysis** (${keywords.summary?.unbrandedPercent || 0}% unbranded - interpret this)\n- Current ranking distribution breakdown\n- Top performing keywords analysis\n- Search intent coverage\n\n#### 2.3 Authority & Backlink Assessment\n- Current domain authority evaluation\n- Backlink profile quality\n- Link building opportunities\n\n### 3. Strategic Opportunities\n\n#### 3.1 🎯 Quick Wins (0-3 Months)\nFor each Page 2 keyword opportunity:\n- Specific keyword and current position\n- Target page URL\n- Required optimization actions\n- Expected traffic gain if moved to page 1\n- Priority level (High/Medium/Low)\n\n#### 3.2 Page 2 to Page 1 Strategy\n- Detailed strategy for the ${keywords.distribution?.page2Count || 0} page 2 keywords\n- Content optimization approach\n- Internal linking tactics\n- Expected timeline\n\n#### 3.3 Content Strategy Recommendations\n- Content gaps identified\n- Topic clusters to develop\n- User intent alignment\n\n### 4. Comprehensive SEO Roadmap\n\n#### Phase 1: Foundation (Months 1-3)\n- Technical fixes prioritized list\n- Quick win implementation\n- On-page optimization priorities\n- **Expected Outcomes:** Specific metrics\n\n#### Phase 2: Growth (Months 4-6)\n- Content creation priorities\n- Link building campaign\n- Local SEO enhancement\n- **Expected Outcomes:** Traffic projections\n\n#### Phase 3: Scaling (Months 7-9)\n- Authority building initiatives\n- Competitive content development\n- **Expected Outcomes:** Market position goals\n\n#### Phase 4: Market Domination (Months 10-12)\n- Industry leadership content\n- Advanced optimisation\n- **Expected Outcomes:** Long-term positioning\n\n### 5. Growth Accelerators\n\n#### 5.1 Google Ads Integration Strategy\n- How PPC complements SEO\n- Recommended budget\n- Expected ROI\n\n#### 5.2 Content Marketing Package\n- Monthly content recommendations\n- Expected outcome\n\n### 6. Investment & ROI Projection\nCreate a clear table showing:\n- Phase-by-phase investment ranges (in GBP £)\n- Expected outcomes at each phase\n- 12-month projection\n\n### 7. Next Steps & How to Get Started\n- Immediate action items (this week)\n- What we need from you\n- Timeline to see results\n- Call to action\n\n---\n\n**IMPORTANT GUIDELINES:**\n1. Write in a consultative, empathetic tone—you're a trusted advisor\n2. Use UK English spelling (optimisation, colour, etc.)\n3. Always tie recommendations to business impact and ROI\n4. Use specific numbers from the data provided\n5. Make the report scannable with clear headings and bullet points\n6. Use **bold** for key metrics and insights\n7. Add strategic context—explain why each recommendation matters\n8. Include realistic timelines\n9. End with inspiration and confidence in the plan\n\nGenerate the complete report now in beautiful, professional Markdown format.`;\n\nreturn {\n  systemPrompt: systemPrompt,\n  userPrompt: userPrompt,\n  targetWebsite: domainRank.target || 'Unknown',\n  generatedAt: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        208
+      ],
+      "id": "3f51464d-3570-4fe2-aa7b-dbeea31330f5",
+      "name": "Generate Prompt"
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.filename }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1CwmxaJ5LEvokptosoiNx1rHXC-wL110-",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2240,
+        208
+      ],
+      "id": "ba50c7dc-948a-4dd2-8cf0-bbb7cd283cf1",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "eBh6pygRVxYps7mk",
+          "name": "Google Drive account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Convert LLM output to Markdown file\nconst markdown = $input.first().json.text;\nconst website = $('Generate Prompt').first().json.targetWebsite || 'website';\nconst date = new Date().toISOString().split('T')[0];\n\n// Create clean filename\nconst cleanWebsite = website.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');\nconst filename = `SEO_Report_${cleanWebsite}_${date}.md`;\n\n// Convert markdown text to base64 for binary\nconst base64Content = Buffer.from(markdown, 'utf8').toString('base64');\n\nreturn {\n  json: {\n    filename: filename,\n    targetWebsite: website,\n    generatedAt: date,\n    markdownContent: markdown\n  },\n  binary: {\n    data: {  // ← Changed from 'file' to 'data'\n      data: base64Content,\n      mimeType: 'text/markdown',\n      fileName: filename,\n      fileExtension: 'md'\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        208
+      ],
+      "id": "1d550590-17ab-48d0-a039-b5a8d62a76a7",
+      "name": "Convert To Markdown"
+    },
+    {
+      "parameters": {
+        "fromEmail": "automation@programmx.com",
+        "toEmail": "={{ $(\"Validate Input\").first().json.email }}",
+        "subject": "=SEO Onboarding Report - {{ $('Convert To Markdown').first().json.targetWebsite }} - {{ $now.format('yyyy-MM-dd') }}",
+        "html": "=<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n    .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }\n    .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }\n    .button { display: inline-block; background: #4299e1; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }\n    .footer { text-align: center; margin-top: 20px; color: #718096; font-size: 12px; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🚀 SEO Onboarding Report Ready!</h1>\n    </div>\n    <div class=\"content\">\n      <p>Hello,</p>\n      \n      <p>Your comprehensive SEO Onboarding Report has been generated and saved.</p>\n      \n      <h3>📊 Report Details:</h3>\n      <ul>\n        <li><strong>Website:</strong> {{ $('Convert To Markdown').first().json.targetWebsite }}</li>\n        <li><strong>Generated:</strong> {{ $now.format('MMMM d, yyyy') }}</li>\n        <li><strong>File:</strong> {{ $('Convert To Markdown').first().json.filename }}</li>\n      </ul>\n      \n      <p style=\"text-align: center;\">\n        <a href=\"https://drive.google.com/file/d/{{ $('Google Drive').first().json.id }}/view\" class=\"button\">\n          📄 View Report in Google Drive\n        </a>\n      </p>\n      \n      <h3>📋 What's Included:</h3>\n      <ul>\n        <li>Executive Summary & SEO Health Score</li>\n        <li>Current Performance Analysis</li>\n        <li>Keyword & Ranking Insights</li>\n        <li>Backlink Profile Assessment</li>\n        <li>Strategic Recommendations</li>\n        <li>12-Month SEO Roadmap</li>\n      </ul>\n      \n      <p>Best regards,<br>\n      <strong>Your SEO Team</strong></p>\n    </div>\n    <div class=\"footer\">\n      <p>This report was automatically generated.</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2448,
+        208
+      ],
+      "id": "39ab68d5-19ed-46f6-b006-17dc1667c0b8",
+      "name": "Send Report",
+      "webhookId": "8cc4bd9c-86ee-4316-9d5d-009ddd4195b4",
+      "credentials": {
+        "smtp": {
+          "id": "Powsux0m0r1TlNbw",
+          "name": "SMTP account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Testing URL:\ncurl -X POST \"https://n8n.programmx.com/webhook-test/OnboardingReport\" -H \"Content-Type: application/json\" -d \"{\\\"target_url\\\":\\\"https://bfss.co.uk/\\\",\\\"email\\\":\\\"ramzanx0553@gmail.com\\\",\\\"location\\\":\\\"United Kingdom\\\",\\\"report_type\\\":\\\"onboarding\\\"}\"\ncurl -X POST \"https://n8n.programmx.com/webhook-test/OnboardingReport\" -H \"Content-Type: application/json\" -d \"{\\\"target_url\\\":\\\"https://www.croydonathletic.com/\\\",\\\"email\\\":\\\"ramzanx0553@gmail.com\\\",\\\"location\\\":\\\"United Kingdom\\\",\\\"report_type\\\":\\\"onboarding\\\"}\"\n\nProduction URL:\ncurl -X POST \"https://n8n.programmx.com/webhook/OnboardingReport\" -H \"Content-Type: application/json\" -d \"{\\\"target_url\\\":\\\"https://bfss.co.uk/\\\",\\\"email\\\":\\\"ramzanx0553@gmail.com\\\",\\\"location\\\":\\\"United Kingdom\\\",\\\"report_type\\\":\\\"onboarding\\\"}\"\ncurl -X POST \"https://n8n.programmx.com/webhook/OnboardingReport\" -H \"Content-Type: application/json\" -d \"{\\\"target_url\\\":\\\"https://www.croydonathletic.com/\\\",\\\"email\\\":\\\"ramzanx0553@gmail.com\\\",\\\"location\\\":\\\"United Kingdom\\\",\\\"report_type\\\":\\\"onboarding\\\"}\"",
+        "height": 224,
+        "width": 2016
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        720
+      ],
+      "id": "61850f27-15af-4e3c-9b5e-f607b779e7a6",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "OnPage Task Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Domain Rank Overview",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ranked Keywords",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Backlinks Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OnPage Task Post": {
+      "main": [
+        [
+          {
+            "node": "Wait for OnPage Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for OnPage Analysis": {
+      "main": [
+        [
+          {
+            "node": "OnPage Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Domain Rank Overview": {
+      "main": [
+        [
+          {
+            "node": "Parse Domain Rank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ranked Keywords": {
+      "main": [
+        [
+          {
+            "node": "Parse Ranked Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OnPage Summary": {
+      "main": [
+        [
+          {
+            "node": "Parse OnPage Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backlinks Summary": {
+      "main": [
+        [
+          {
+            "node": "Parse Backlinks Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse OnPage Summary": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Domain Rank": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Parse Ranked Keywords": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Backlinks Summary": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1 mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Onboarding Report Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Prompt": {
+      "main": [
+        [
+          {
+            "node": "Onboarding Report Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Onboarding Report Generator": {
+      "main": [
+        [
+          {
+            "node": "Convert To Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert To Markdown": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ae625447-05e8-46c9-a3e7-2c8ec9a22c90",
+  "meta": {
+    "instanceId": "151305d708accaf9ba7df3ae300984e7c14a108b131ed2d081a3bd48f670f5c4"
+  },
+  "id": "k2e7642RRjnhzTEx",
+  "tags": [
+    {
+      "updatedAt": "2025-03-14T12:08:26.948Z",
+      "createdAt": "2025-03-14T12:08:26.948Z",
+      "id": "TF9zcHoRnyCYBNVV",
+      "name": "SEO"
+    },
+    {
+      "updatedAt": "2025-11-18T10:45:47.993Z",
+      "createdAt": "2025-11-18T10:45:47.993Z",
+      "id": "TaYkrg3HODu8PBvS",
+      "name": "automation"
+    }
+  ]
+}
