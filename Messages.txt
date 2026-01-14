@@ -1,0 +1,12 @@
+Project: API Integration & Backend Development
+Task: Implement user authentication endpoint
+Description: Maryam, we need to add a new authentication endpoint for the mobile app. Please implement JWT-based authentication with refresh token support using FastAPI. The endpoint should handle login, logout, and token refresh operations.
+Assignee: @Maryam Aslam
+
+
+Project: DevOps & Infrastructure
+Task: Set up CI/CD pipeline for staging environment
+Description: Ramzan, please configure the CI/CD pipeline for the staging environment. This should include automated testing, deployment scripts, and rollback procedures. The pipeline should trigger on merge to the staging branch.
+Assignee: @Ramzan
+
+Ayesha, we need a new authentication API for our backend system as part of the Backend API Development project. The task is to build a User Authentication API with FastAPI. Create endpoints for user registration (new accounts with email and password), user login (authenticate users and return JWT tokens), and password reset (allow users to reset forgotten passwords). Use JWT (JSON Web Tokens) for secure authentication, validate all inputs (email format, password strength, etc.), handle errors properly and return clear error messages, follow RESTful API conventions (POST for registration/login, etc.), add logging for important actions, and test all endpoints before submitting. The API should be ready to integrate with our mobile application. If you have any questions or need clarification, please let me know. Thank you.
