@@ -1,0 +1,344 @@
+{
+  "name": "Chat to To-Do Automation Completed",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat2",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1376,
+        -112
+      ],
+      "id": "2ce273c7-7ad6-4853-b419-fcbcf63383c6",
+      "name": "Webhook",
+      "webhookId": "17d3aa5e-7b82-414b-aefb-206841c1767e",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9e5f170a-ca4d-41ee-84da-b91573f491fc",
+              "name": "body.message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "aece039d-aff0-44a4-bda8-87b343739d25",
+              "name": "body.sender_name",
+              "value": "={{ $json.body.sender_name }}",
+              "type": "string"
+            },
+            {
+              "id": "b3409efa-c5a2-4bba-b187-b68e23677335",
+              "name": "body.sender_organization",
+              "value": "={{ $json.body.sender_organization }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1168,
+        -112
+      ],
+      "id": "857fc8a3-3492-4ad5-852b-9041efb77c6a",
+      "name": "Select Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://erp.programmx.com/api/v1/employees",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "_Vo3t259TXoTqwZghQejsxn4Yvw5l9a4OSVaU920DeA"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "Fix bug in login"
+            },
+            {
+              "name": "description",
+              "value": "User cannot login with correct credentials"
+            },
+            {
+              "name": "project_id",
+              "value": "1"
+            },
+            {
+              "name": "user_id",
+              "value": "5"
+            },
+            {
+              "name": "priority",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -944,
+        -112
+      ],
+      "id": "fdce1edb-7b10-4a65-a95f-8fdfeaf92612",
+      "name": "Get Employees"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://erp.programmx.com/api/v1/projects",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "_Vo3t259TXoTqwZghQejsxn4Yvw5l9a4OSVaU920DeA"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "active",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -752,
+        -112
+      ],
+      "id": "5cb6fbb6-22fb-497e-9594-f8f0ebf187e3",
+      "name": "Get Active Projects"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from Select Data node\nconst selectData = $('Select Data').first().json.body;\n\n// ---------------- EMPLOYEES ----------------\nlet employees = [];\n\nconst empItem = $('Get Employees').first().json;\n\nif (Array.isArray(empItem) && empItem[0]?.result?.data) {\n  employees = empItem[0].result.data;\n} else if (empItem?.result?.data) {\n  employees = empItem.result.data;\n} else if (Array.isArray(empItem)) {\n  employees = empItem;\n}\n\n// ---------------- PROJECTS ----------------\nlet projects = [];\n\nconst projItem = $('Get Active Projects').first().json;\n\nif (Array.isArray(projItem) && projItem[0]?.result?.data) {\n  projects = projItem[0].result.data;\n} else if (projItem?.result?.data) {\n  projects = projItem.result.data;\n} else if (Array.isArray(projItem)) {\n  projects = projItem;\n}\n\n// ---------------- FINAL OUTPUT ----------------\nreturn [{\n  json: {\n    sender_name: selectData.sender_name || \"\",\n    message: selectData.message || \"\",\n    sender_organization: selectData.sender_organization || \"\",\n    all_employees: employees.map(emp => ({\n      id: emp.id,\n      name: emp.name,\n      email: emp.work_email,\n      job_title: emp.job_title,\n      department: emp.department_name\n    })),\n    all_projects: projects.map(proj => ({\n      id: proj.id,\n      name: proj.name\n    }))\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -112
+      ],
+      "id": "ea4be552-2fa7-4334-bf3e-db8df580837e",
+      "name": "Function"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://erp.programmx.com/api/v1/todo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{$json.task_title}}\",\n  \"description\": \"{{$json.task_description}}\",\n  \"project_id\": \"{{$json.project_id}}\",\n  \"assigned_to\": \"{{$json.assignee}}\",\n  \"user_id\": \"{{$json.user_id}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        -112
+      ],
+      "id": "3a5a9e25-19fa-48c2-bf1c-a713458d168e",
+      "name": "Create ToDo on Odoo",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pB5QB9pGNdfWP9dB",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI task extraction system.\n\nYou will receive:\n- A message\n- A sender name\n- A list of employees\n- A list of projects\n\nYou MUST:\n- Select project_title ONLY from the provided projects list.\n-Select project_id ONLY from the provided projects list.\n- Select assignee ONLY from the provided employees list.\n- If no close match exists, set assignee to null.\n\nReturn ONLY valid JSON in this exact format:\n\n{\n  \"task_title\": \"\",\n  \"project_title\": \"\",\n  \"project_id\":\"\"\n  \"task_description\": \"\",\n  \"assignee\": null\n}\n\n------------------------\nMessage:\n{{$json.message}}\n\nSender:\n{{$json.sender_name}}\n\nOrganization:\n{{$json.sender_organization}}\n\nEmployees:\n{{JSON.stringify($json.all_employees)}}\n\nProjects:\n{{JSON.stringify($json.all_projects)}}\n------------------------\n\nRules:\n- task_title must be short and action-based\n- project_title must exactly match a project from the list\n- project_id must exactly match a project from the list\n- task_description must be a professional expanded version of the message\n- assignee must be ONLY the employee name (string) from the employee list, or null if not found\n- Never include id or email in assignee\n- Never guess\n- Never return text outside JSON",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -352,
+        -112
+      ],
+      "id": "690b0339-4510-4d47-9b6a-11c4a5696b43",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        80
+      ],
+      "id": "1bab5cc8-5b63-4e36-884b-7e06ea7f87ae",
+      "name": "Extract ToDo Details",
+      "credentials": {
+        "openAiApi": {
+          "id": "H5LXr3raFFEHNnlb",
+          "name": "OpenAi account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json.text || $json.message || \"\";\n\n// Remove markdown code blocks if present\nlet cleanedInput = input.trim();\nif (cleanedInput.startsWith(\"```json\")) {\n  cleanedInput = cleanedInput.replace(/```json\\n?/g, \"\").replace(/```\\n?/g, \"\").trim();\n} else if (cleanedInput.startsWith(\"```\")) {\n  cleanedInput = cleanedInput.replace(/```\\n?/g, \"\").trim();\n}\n\n// Parse the JSON from LLM response\nlet parsed;\ntry {\n  parsed = JSON.parse(cleanedInput);\n} catch (e) {\n  return [{ json: { error: \"Invalid JSON from LLM\", raw_input: input } }];\n}\n\n// Get the original data from Function node\nconst functionData = $('Function').first().json;\nconst employees = functionData.all_employees || [];\nconst projects = functionData.all_projects || [];\n\n// Employee name to user_id mapping\nconst employeeToUserId = {\n  \"Yasir\": 2,\n  \"Wajahat Qaimkhani\": 6,\n  \"Maryam Aslam\": 7,\n  \"Aleesha Ramzan\": 8,\n  \"Ehtasham Fareed\": 9,\n  \"Hamza Shabbir\": 10,\n  \"Nosheen Akhtar\": 11,\n  \"Rubina Farhat\": 12,\n  \"Samra Idrees\": 13,\n  \"Usama Hassan\": 14,\n  \"Osama Aurangzaib\": 16,\n  \"Muhammad Yasir Azeem\": 17,\n  \"Mubashir Maqbool\": 18,\n  \"Ayesha Tariq\": 19,\n  \"Ramzan\": 20,\n  \"Sehar aftab\": 23,\n  \"Muhammad Abdullah\": 25,\n  \"Muhammad Khizer\": 26,\n  \"Muhammad Haider\": 27,\n  \"Saba Ghaffar\": 28\n};\n\n// Validate Project Title\nconst projectExists = projects.some(proj => \n  proj.name.trim() === (parsed.project_title || \"\").trim()\n);\n\n// Get matched project for project_id\nconst matchedProject = projects.find(proj => \n  proj.name.trim() === (parsed.project_title || \"\").trim()\n);\n\n// Validate Assignee Name\nconst assigneeExists = parsed.assignee ? employees.some(emp => \n  emp.name.trim() === (parsed.assignee || \"\").trim()\n) : true; // null assignee is valid\n\n// Get user_id for assignee\nconst userId = parsed.assignee ? employeeToUserId[parsed.assignee.trim()] || null : null;\n\n// Build error messages\nlet errors = [];\nif (!projectExists) {\n  errors.push(\"Project not found in project list\");\n}\nif (!assigneeExists) {\n  errors.push(\"Assignee is not present in employee list\");\n}\n\n// Return result\nif (errors.length > 0) {\n  return [{\n    json: {\n      success: false,\n      error: errors.join(\" and \"),\n      task_title: parsed.task_title || null,\n      project_title: parsed.project_title || null,\n      project_id: matchedProject ? matchedProject.id : null,\n      task_description: parsed.task_description || null,\n      assignee: parsed.assignee || null,\n      user_id: userId\n    }\n  }];\n} else {\n  return [{\n    json: {\n      success: true,\n      task_title: parsed.task_title,\n      project_title: parsed.project_title,\n      project_id: matchedProject ? matchedProject.id : null,\n      task_description: parsed.task_description,\n      assignee: parsed.assignee,\n      user_id: userId\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -112
+      ],
+      "id": "12df10bc-8e88-48ef-9e65-d9ac71410111",
+      "name": "Validation"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Select Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Data": {
+      "main": [
+        [
+          {
+            "node": "Get Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Employees": {
+      "main": [
+        [
+          {
+            "node": "Get Active Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Projects": {
+      "main": [
+        [
+          {
+            "node": "Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract ToDo Details": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation": {
+      "main": [
+        [
+          {
+            "node": "Create ToDo on Odoo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4621a058-1784-4714-86f5-75a02295188b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "151305d708accaf9ba7df3ae300984e7c14a108b131ed2d081a3bd48f670f5c4"
+  },
+  "id": "MnOpEd09AtuQVnby",
+  "tags": []
+}
