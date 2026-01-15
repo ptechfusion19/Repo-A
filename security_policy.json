@@ -1,0 +1,156 @@
+{
+  "security": {
+    "version": "1.0.0",
+    "last_updated": "2026-01-15",
+    "policies": {
+      "authentication": {
+        "method": "oauth2",
+        "provider": "github",
+        "require_mfa": true,
+        "session_timeout_minutes": 60,
+        "max_login_attempts": 5,
+        "lockout_duration_minutes": 15,
+        "password_policy": {
+          "min_length": 12,
+          "require_uppercase": true,
+          "require_lowercase": true,
+          "require_numbers": true,
+          "require_special_chars": true,
+          "expiry_days": 90,
+          "history_count": 5
+        }
+      },
+      "authorization": {
+        "rbac_enabled": true,
+        "roles": [
+          {
+            "name": "admin",
+            "permissions": ["*"],
+            "description": "Full system access"
+          },
+          {
+            "name": "operator",
+            "permissions": [
+              "workflow:read",
+              "workflow:execute",
+              "sync:create",
+              "sync:read",
+              "repository:read"
+            ],
+            "description": "Can execute workflows and create syncs"
+          },
+          {
+            "name": "viewer",
+            "permissions": [
+              "workflow:read",
+              "sync:read",
+              "repository:read"
+            ],
+            "description": "Read-only access"
+          }
+        ],
+        "default_role": "viewer"
+      },
+      "encryption": {
+        "at_rest": {
+          "enabled": true,
+          "algorithm": "AES-256-GCM",
+          "key_rotation_days": 90
+        },
+        "in_transit": {
+          "enabled": true,
+          "tls_version": "1.3",
+          "ciphers": [
+            "TLS_AES_256_GCM_SHA384",
+            "TLS_CHACHA20_POLY1305_SHA256",
+            "TLS_AES_128_GCM_SHA256"
+          ],
+          "require_client_cert": false
+        }
+      },
+      "secrets_management": {
+        "provider": "vault",
+        "rotation_enabled": true,
+        "rotation_interval_days": 30,
+        "audit_logging": true,
+        "encryption_key_storage": "hardware_security_module"
+      },
+      "network_security": {
+        "firewall_rules": [
+          {
+            "name": "allow_github_api",
+            "source": "api.github.com",
+            "port": 443,
+            "protocol": "tcp",
+            "action": "allow"
+          },
+          {
+            "name": "deny_all_other",
+            "source": "0.0.0.0/0",
+            "port": "*",
+            "protocol": "*",
+            "action": "deny"
+          }
+        ],
+        "ip_whitelist": [],
+        "rate_limiting": {
+          "enabled": true,
+          "requests_per_minute": 1000,
+          "burst_size": 100
+        }
+      },
+      "data_protection": {
+        "gdpr_compliance": true,
+        "data_retention_days": 365,
+        "anonymization_enabled": true,
+        "right_to_deletion": true,
+        "data_encryption": true,
+        "backup_encryption": true
+      },
+      "audit_logging": {
+        "enabled": true,
+        "retention_days": 730,
+        "log_levels": ["info", "warn", "error", "audit"],
+        "events_logged": [
+          "authentication",
+          "authorization",
+          "data_access",
+          "data_modification",
+          "configuration_changes",
+          "security_events"
+        ],
+        "encrypted": true
+      },
+      "vulnerability_management": {
+        "scanning_enabled": true,
+        "scan_frequency": "weekly",
+        "auto_patch": false,
+        "critical_patch_days": 7,
+        "high_patch_days": 30,
+        "medium_patch_days": 90
+      },
+      "incident_response": {
+        "enabled": true,
+        "response_team": "security@example.com",
+        "escalation_levels": [
+          {
+            "level": "critical",
+            "response_time_minutes": 15,
+            "notification_channels": ["email", "sms", "pager"]
+          },
+          {
+            "level": "high",
+            "response_time_minutes": 60,
+            "notification_channels": ["email", "slack"]
+          },
+          {
+            "level": "medium",
+            "response_time_minutes": 240,
+            "notification_channels": ["email"]
+          }
+        ]
+      }
+    }
+  }
+}
+
