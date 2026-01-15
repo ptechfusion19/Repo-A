@@ -1,0 +1,207 @@
+{
+  "test_cases": [
+    {
+      "id": "TC1",
+      "name": "Happy Path - Complete Input",
+      "description": "Test with all required and optional fields",
+      "expected": "SUCCESS",
+      "payload": {
+        "target_url": "bfss.co.uk",
+        "email": "test@example.com",
+        "report_type": "onboarding",
+        "location": "United Kingdom",
+        "company_name": "BFSS Security"
+      }
+    },
+    {
+      "id": "TC2",
+      "name": "Minimal Input",
+      "description": "Only required fields",
+      "expected": "SUCCESS",
+      "payload": {
+        "target_url": "example.com",
+        "email": "minimal@test.com"
+      }
+    },
+    {
+      "id": "TC3",
+      "name": "URL with HTTPS",
+      "description": "Test URL cleaning - remove https://",
+      "expected": "SUCCESS - URL cleaned to searchhounds.com",
+      "payload": {
+        "target_url": "https://www.searchhounds.com/",
+        "email": "https-test@example.com"
+      }
+    },
+    {
+      "id": "TC4",
+      "name": "URL with HTTP",
+      "description": "Test URL cleaning - remove http://",
+      "expected": "SUCCESS - URL cleaned",
+      "payload": {
+        "target_url": "http://testsite.co.uk",
+        "email": "http-test@example.com"
+      }
+    },
+    {
+      "id": "TC5",
+      "name": "USA Location",
+      "description": "Different geographic market",
+      "expected": "SUCCESS - US data returned",
+      "payload": {
+        "target_url": "hubspot.com",
+        "email": "usa@example.com",
+        "location": "United States"
+      }
+    },
+    {
+      "id": "TC6",
+      "name": "Large Established Website",
+      "description": "Website with lots of data",
+      "expected": "SUCCESS - Comprehensive data",
+      "payload": {
+        "target_url": "moz.com",
+        "email": "large-site@example.com"
+      }
+    },
+    {
+      "id": "TC7",
+      "name": "E-commerce Website",
+      "description": "Different industry vertical",
+      "expected": "SUCCESS",
+      "payload": {
+        "target_url": "asos.com",
+        "email": "ecommerce@example.com",
+        "location": "United Kingdom"
+      }
+    },
+    {
+      "id": "TC8",
+      "name": "Subdomain",
+      "description": "Test subdomain handling",
+      "expected": "SUCCESS - Subdomain analyzed",
+      "payload": {
+        "target_url": "blog.hubspot.com",
+        "email": "subdomain@example.com"
+      }
+    },
+    {
+      "id": "TC9",
+      "name": "Missing URL",
+      "description": "Required field missing",
+      "expected": "FAIL - target_url is required",
+      "payload": {
+        "email": "no-url@example.com",
+        "report_type": "onboarding"
+      }
+    },
+    {
+      "id": "TC10",
+      "name": "Missing Email",
+      "description": "Email field missing",
+      "expected": "FAIL or use default",
+      "payload": {
+        "target_url": "test.com"
+      }
+    },
+    {
+      "id": "TC11",
+      "name": "Empty Body",
+      "description": "No data provided",
+      "expected": "FAIL - target_url is required",
+      "payload": {}
+    },
+    {
+      "id": "TC12",
+      "name": "Invalid URL",
+      "description": "Malformed URL format",
+      "expected": "FAIL - API error",
+      "payload": {
+        "target_url": "not a valid url!!!",
+        "email": "invalid@example.com"
+      }
+    },
+    {
+      "id": "TC13",
+      "name": "Non-existent Domain",
+      "description": "Domain that doesn't exist",
+      "expected": "PARTIAL - Empty data handled",
+      "payload": {
+        "target_url": "thisdomaindoesnotexist12345xyz.com",
+        "email": "nonexistent@example.com"
+      }
+    },
+    {
+      "id": "TC14",
+      "name": "Update Report Type",
+      "description": "Test update report flow",
+      "expected": "SUCCESS - is_update: true",
+      "payload": {
+        "target_url": "bfss.co.uk",
+        "email": "update@example.com",
+        "report_type": "update"
+      }
+    },
+    {
+      "id": "TC15",
+      "name": "Special Email Characters",
+      "description": "Email with + character",
+      "expected": "SUCCESS",
+      "payload": {
+        "target_url": "test.com",
+        "email": "user+seo@example.com"
+      }
+    },
+    {
+      "id": "TC16",
+      "name": "Body Nested Structure",
+      "description": "Data nested in body object",
+      "expected": "SUCCESS - body.target_url extracted",
+      "payload": {
+        "body": {
+          "target_url": "bfss.co.uk",
+          "email": "nested@example.com"
+        }
+      }
+    }
+  ],
+  "quick_tests": {
+    "description": "Copy these directly into your webhook testing tool",
+    "happy_path": {
+      "target_url": "bfss.co.uk",
+      "email": "your-email@example.com",
+      "report_type": "onboarding"
+    },
+    "minimal": {
+      "target_url": "example.com",
+      "email": "your-email@example.com"
+    },
+    "should_fail": {
+      "email": "no-url@example.com"
+    }
+  },
+  "sample_websites": {
+    "uk_local_business": [
+      "bfss.co.uk",
+      "searchhounds.com",
+      "localplumber.co.uk"
+    ],
+    "large_authority": [
+      "moz.com",
+      "hubspot.com",
+      "semrush.com",
+      "ahrefs.com"
+    ],
+    "ecommerce": [
+      "asos.com",
+      "boohoo.com",
+      "next.co.uk"
+    ],
+    "tech": [
+      "stripe.com",
+      "twilio.com",
+      "cloudflare.com"
+    ]
+  }
+}
+
