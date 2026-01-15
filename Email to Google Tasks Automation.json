@@ -1,0 +1,637 @@
+{
+  "name": "Email to Google Tasks Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "includeSpamTrash": true,
+          "includeDrafts": true,
+          "sender": "ramzanx0553@gmail.com"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -2048,
+        208
+      ],
+      "id": "4af9cca2-f2af-4d62-94fe-5bc2e8aea33d",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0547mNEXjZ05SZaS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.result.data;\nconst names = data.map(employee => employee.name);\nreturn names.map(name => ({ json: { name } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        -16
+      ],
+      "id": "94d4563f-55b0-4201-935b-129f0d5bf99e",
+      "name": "Get All names"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4638d6a5-46e8-4751-8482-3e51013176cc",
+              "name": "result.data",
+              "value": "={{ $json.result.data }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1584,
+        -16
+      ],
+      "id": "d6282fa2-27d3-4dfc-8c3d-9e2340485aee",
+      "name": "Retriving Data"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        -16
+      ],
+      "id": "d24c7de9-c722-44d4-86a9-6a1aac6b4070",
+      "name": "All Names"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://erp.programmx.com/api/v1/employees",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "_Vo3t259TXoTqwZghQejsxn4Yvw5l9a4OSVaU920DeA"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "Fix bug in login"
+            },
+            {
+              "name": "description",
+              "value": "User cannot login with correct credentials"
+            },
+            {
+              "name": "project_id",
+              "value": "1"
+            },
+            {
+              "name": "user_id",
+              "value": "5"
+            },
+            {
+              "name": "priority",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1824,
+        -16
+      ],
+      "id": "94936884-e335-4c40-b435-fd1d6056dee5",
+      "name": "Geting Employees data "
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0ac458b4-2146-43e4-a6d6-44b288186470",
+              "name": "textAsHtml",
+              "value": "={{ $json.textAsHtml }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1856,
+        400
+      ],
+      "id": "a74e67a8-6ee3-4c4a-a0bc-3c5f46dd8ff4",
+      "name": "Get Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Function to decode HTML entities\nfunction decodeHtmlEntities(str) {\n    return str.replace(/&#(\\d+);/g, (_, dec) => String.fromCharCode(dec))  // decimal entities\n              .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex,16))) // hex entities\n              .replace(/&([a-z]+);/gi, (_, name) => {\n                  const entities = {nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '\"', apos: '\\''};\n                  return entities[name.toLowerCase()] || '';\n              });\n}\n\n// Dynamic HTML input\nlet text = decodeHtmlEntities($input.first().json.textAsHtml);\n\n// Remove all HTML tags\ntext = text.replace(/<[^>]*>/g, '\\n');\n\n// Normalize line breaks\ntext = text.replace(/\\r\\n|\\r/g, '\\n').replace(/\\n+/g, '\\n').trim();\n\n// **Remove emojis completely**\ntext = text.replace(/[\\p{Emoji_Presentation}\\p{Extended_Pictographic}]/gu, '');\n\n// Extract Action Items section\nlet actionMatch = text.match(/Action Items ([\\s\\S]*?)(\\nMeeting Summary|$)/i);\nif (!actionMatch) return [];\n\n// Get plain lines\nlet actionText = actionMatch[1].trim();\nlet lines = actionText.split('\\n').map(l => l.trim()).filter(l => l);\n\n// Return cleaned action list\nreturn [{ json: { actionList: lines.join('\\n') } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1728,
+        400
+      ],
+      "id": "8b365aa2-daa0-40dd-81d0-29f5ad0087b2",
+      "name": "Get useful data"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "assignes"
+            },
+            {
+              "fieldToAggregate": "content"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        400
+      ],
+      "id": "68b93c0f-cfce-40c2-bcff-b99b31a6dbf5",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1024,
+        192
+      ],
+      "id": "e43c4ba1-a0f4-472b-8d7a-5076ad695940",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\n\nconst todos = [];\n\n// Map employee names to Odoo user IDs\nconst userMapping = {\n  \"Yasir\": 2,\n  \"Wajahat Qaimkhani\": 6,\n  \"Wajahat Ali\": 6,\n  \"Maryam Aslam\": 7,\n  \"Aleesha Ramzan\": 8,\n  \"Alisha Ramzan\": 8,\n  \"Ehtasham Fareed\": 9,\n  \"Hamza Shabbir\": 10,\n  \"Nosheen Akhtar\": 11,\n  \"Rubina Farhat\": 12,\n  \"Samra Idrees\": 13,\n  \"Usama Hassan\": 14,\n  \"Osama Aurangzaib\": 16,\n  \"Muhammad Yasir Azeem\": 17,\n  \"Mubashir Maqbool\": 18,\n  \"Ayesha Tariq\": 19,\n  \"Ramzan\": 20,\n  \"Sehar aftab\": 23,\n  \"Sehar Aftab\": 23,\n  \"Muhammad Abdullah\": 25,\n  \"Muhammad Khizer\": 26,\n  \"Muhammad Haider\": 27,\n  \"Saba Ghaffar\": 28\n};\n\n// Loop through content array\nfor (let i = 0; i < data.content.length; i++) {\n  if (data.content[i] && data.content[i].trim() !== \"\") {\n    const assignedName = data.assignes[i] || \"\";\n    \n    // Check if assignee exists in employee list\n    let userId;\n    let taskName = data.content[i].split('\\n')[0].substring(0, 50);\n    let assigneeName;\n    let employeePresentInList;\n    \n    if (assignedName === \"\") {\n      // No assignee specified - Default to Wajahat\n      userId = 6;\n      assigneeName = \"Wajahat (Default)\";\n      employeePresentInList = \"No assignee specified - Defaulted to Wajahat\";\n    } else if (userMapping[assignedName]) {\n      // Assignee found in employee list\n      userId = userMapping[assignedName];\n      assigneeName = assignedName;\n      employeePresentInList = \"Yes\";\n    } else {\n      // Assignee NOT in employee list\n      userId = \"Employee not present in employee list\";\n      assigneeName = `${assignedName} (Not in employees)`;\n      employeePresentInList = \"No\";\n      taskName = `${assignedName} (Not in employees) - ${taskName}`;\n    }\n    \n    todos.push({\n      description: data.content[i],\n      assignee: assigneeName,\n      employee_present_in_employees_list: employeePresentInList,\n      user_id: userId,\n      task_name: taskName\n    });\n  }\n}\n\nreturn todos.map(todo => ({ json: todo }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        192
+      ],
+      "id": "c4d0bf1a-604c-4f4b-a9e7-e75aaafb4a50",
+      "name": "Validate Data"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a JSON parser. Extract action items from meeting notes.\n\nInput format:\n- Action description\n- URL (optional)\n- \">\" separator\n- Assignee name\n\nOutput format (JSON array only):\n[\n  {\n    \"assignes\": \"Assignee Name or empty string if none\",\n    \"content\": \"Action description\\nURL if present\"\n  }\n]\n\nRules:\n- Return ONLY valid JSON, no markdown or explanation\n- Keep URLs on separate line with \\n\n- Use empty string \"\" if no assignee\n- Skip empty content entries\n\nParse this text:\n{{ $json.actionList }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        400
+      ],
+      "id": "4442159d-10c0-4ddf-991d-9c2ce2f38623",
+      "name": "Get Data1",
+      "credentials": {
+        "openAiApi": {
+          "id": "igpXcNFh8cmsleRJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the response from OpenAI\nconst response = $input.item.json.output[0].content[0].text;\n\n// Remove markdown code blocks if present\nconst cleaned = response.replace(/```json\\s*/g, '').replace(/```\\s*/g, '').trim();\n\n// Parse the JSON string\nconst parsed = JSON.parse(cleaned);\n\n// Return as separate items for the next node\nreturn parsed.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1344,
+        400
+      ],
+      "id": "8cea92a8-c65a-4e67-b613-d2cf4c90d3a0",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=Clean this task data and create a professional task title.\n\nTask: {{ JSON.stringify($json) }}\n\nCreate:\n\n1. Professional title (max 50 chars) - read from description field, save as \"task_name\"\n\n2. Clean description - keep URL on new line\n\n3. Keep assignee as-is\n\n4. Keep user_id as-is\n\n5. Keep employee_present_in_employees_list as-is\n\n6. If employee_present_in_employees_list is \"No\", add note field explaining the assignee was not found\n\nReturn ONLY this JSON:\n\n{\"task_name\":\"title here\",\"description\":\"text\\nurl\",\"assignee\":\"name\",\"employee_present_in_employees_list\":\"Yes/No\",\"user_id\":number,\"note\":\"if needed\"}\n\nNo markdown, no explanation, just the JSON object."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        192
+      ],
+      "id": "79cf0f3c-fd63-4332-88e3-e162be3170ac",
+      "name": "Get Data",
+      "credentials": {
+        "openAiApi": {
+          "id": "igpXcNFh8cmsleRJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get the response for the current item\nconst response = $input.item.json.output[0].content[0].text;\n\n// Parse the JSON string\nconst parsed = JSON.parse(response);\n\n// Return the parsed object\nreturn { json: parsed };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        192
+      ],
+      "id": "bfb150bb-3ca5-44bb-87de-44a1fd0b86b6",
+      "name": "Parse"
+    },
+    {
+      "parameters": {
+        "task": "MDU5OTAyNzI4MTMzNTE1OTgyNTg6MDow",
+        "title": "={{ $json.task_name }}",
+        "additionalFields": {
+          "notes": "=Task Description: {{ $json.description }}\nAssignee: {{ $json.assignee }}\nEmployee in list: {{ $json.employee_present_in_employees_list }}\nUser ID: {{ $json.user_id }}\n{{ $json.note ? 'Note: ' + $json.note : '' }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        192
+      ],
+      "id": "b25c32f0-e8e0-41b7-9397-b3f738d81358",
+      "name": "Create Task",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "90DLwG5k6BJ2USjB",
+          "name": "Google Tasks Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the tasks array from the previous node output\nconst tasks = $input.all();\n\n// Format each task into a readable structure\nconst formattedTasks = tasks.map((task, index) => {\n  const taskData = task.json;\n  \n  // Extract description and assignee from notes field\n  let description = taskData.notes || 'No description';\n  let assignee = 'Unassigned';\n  let employeeInList = 'Unknown';\n  let userId = 'N/A';\n  let notes = '';\n  \n  // Parse the notes field to extract structured information\n  if (description) {\n    // Extract assignee (look for \"Assignee: \" line)\n    const assigneeMatch = description.match(/Assignee:\\s*([^\\n]+)/);\n    if (assigneeMatch) {\n      assignee = assigneeMatch[1].trim();\n    }\n    \n    // Extract employee in list status\n    const employeeMatch = description.match(/Employee in list:\\s*([^\\n]+)/);\n    if (employeeMatch) {\n      employeeInList = employeeMatch[1].trim();\n    }\n    \n    // Extract user ID\n    const userIdMatch = description.match(/User ID:\\s*([^\\n]+)/);\n    if (userIdMatch) {\n      userId = userIdMatch[1].trim();\n    }\n    \n    // Extract note if exists\n    const noteMatch = description.match(/Note:\\s*([^\\n]+)/);\n    if (noteMatch) {\n      notes = noteMatch[1].trim();\n    }\n    \n    // Clean description to only show the actual task description (before \"Assignee:\")\n    const descParts = description.split('\\n\\nAssignee:');\n    description = descParts[0].trim();\n  }\n  \n  return {\n    taskNumber: index + 1,\n    title: taskData.title || 'No title',\n    status: taskData.status || 'Unknown',\n    created: taskData.updated ? new Date(taskData.updated).toLocaleString() : 'N/A',\n    taskId: taskData.id || 'N/A',\n    viewLink: taskData.webViewLink || 'N/A',\n    description: description,\n    assignee: assignee,\n    employeeInList: employeeInList,\n    userId: userId,\n    notes: notes,\n    dueDate: taskData.due ? new Date(taskData.due).toLocaleDateString() : 'No due date'\n  };\n});\n\n// Create a summary\nconst summary = {\n  totalTasks: formattedTasks.length,\n  tasksCreated: formattedTasks.filter(t => t.status === 'needsAction').length,\n  tasksWithValidAssignee: formattedTasks.filter(t => t.employeeInList === 'Yes').length,\n  tasksWithInvalidAssignee: formattedTasks.filter(t => t.employeeInList === 'No').length,\n  timestamp: new Date().toLocaleString()\n};\n\n// Create readable text output\nlet readableOutput = `📋 TASK CREATION SUMMARY\\n`;\nreadableOutput += `${'='.repeat(60)}\\n\\n`;\nreadableOutput += `Total Tasks Created: ${summary.totalTasks}\\n`;\nreadableOutput += `Tasks with Valid Assignee: ${summary.tasksWithValidAssignee}\\n`;\nreadableOutput += `Tasks with Invalid Assignee: ${summary.tasksWithInvalidAssignee}\\n`;\nreadableOutput += `Timestamp: ${summary.timestamp}\\n\\n`;\nreadableOutput += `${'='.repeat(60)}\\n`;\n\nformattedTasks.forEach(task => {\n  // Add warning emoji for tasks with invalid assignees\n  const warningIcon = task.employeeInList === 'No' ? '⚠️ ' : '';\n  \n  readableOutput += `\\n${warningIcon}🔹 Task ${task.taskNumber}\\n`;\n  readableOutput += `   Title: ${task.title}\\n`;\n  readableOutput += `   Description: ${task.description}\\n`;\n  readableOutput += `   Assignee: ${task.assignee}`;\n  \n  if (task.employeeInList === 'No') {\n    readableOutput += ` ⚠️ NOT FOUND IN EMPLOYEE LIST`;\n  } else if (task.employeeInList === 'Yes') {\n    readableOutput += ` ✅`;\n  }\n  \n  readableOutput += `\\n`;\n  readableOutput += `   User ID: ${task.userId}\\n`;\n  readableOutput += `   Status: ${task.status}\\n`;\n  readableOutput += `   Created: ${task.created}\\n`;\n  readableOutput += `   Due Date: ${task.dueDate}\\n`;\n  \n  if (task.notes) {\n    readableOutput += `   Note: ${task.notes}\\n`;\n  }\n  \n  readableOutput += `   Task ID: ${task.taskId}\\n`;\n  readableOutput += `   View Link: ${task.viewLink}\\n`;\n  readableOutput += `   ${'-'.repeat(58)}\\n`;\n});\n\n// Add footer with action items if there are invalid assignees\nif (summary.tasksWithInvalidAssignee > 0) {\n  readableOutput += `\\n⚠️ ACTION REQUIRED:\\n`;\n  readableOutput += `${summary.tasksWithInvalidAssignee} task(s) have assignees not found in the employee list.\\n`;\n  readableOutput += `Please review and update these assignments.\\n`;\n}\n\n// Return both structured data and readable text\nreturn [\n  {\n    json: {\n      summary,\n      tasks: formattedTasks,\n      readableOutput\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        192
+      ],
+      "id": "e597d91c-b709-402a-9131-174192ace707",
+      "name": "Parse Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\nconst inputData = $input.first().json;\n\nfor (let i = 1; i <= 50; i++) {\n  items.push({\n    json: {\n      run: i,\n      ...inputData\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -96
+      ],
+      "id": "b740f68f-ecef-470c-b4f8-81f95c2c8ccc",
+      "name": "Loop"
+    },
+    {
+      "parameters": {
+        "sendTo": "ehtasham@programmx.com",
+        "subject": "Task(s) Creation",
+        "emailType": "text",
+        "message": "={{ $json.readableOutput }}Tasks added in Google Tasks  {{ $json.summary }}, ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        432
+      ],
+      "id": "f6cead09-c50f-46b1-b11d-a1f279b3c9c6",
+      "name": "Wajahat Bhai",
+      "webhookId": "f8e85bc3-9bd6-4ccd-9297-804dd0c43694",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0547mNEXjZ05SZaS",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "wajeehaafi@gmail.com",
+        "subject": "Task(s) Creation",
+        "emailType": "text",
+        "message": "={{ $json.run }}",
+        "options": {
+          "ccList": "muhammadkhizerrazyamqureshi@gmail.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        144,
+        -96
+      ],
+      "id": "81d5d2f7-6852-45a1-a759-9f0c4497f81d",
+      "name": "Sehar",
+      "webhookId": "f8e85bc3-9bd6-4ccd-9297-804dd0c43694",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0547mNEXjZ05SZaS",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Geting Employees data ",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All names": {
+      "main": [
+        [
+          {
+            "node": "All Names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retriving Data": {
+      "main": [
+        [
+          {
+            "node": "Get All names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geting Employees data ": {
+      "main": [
+        [
+          {
+            "node": "Retriving Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Content": {
+      "main": [
+        [
+          {
+            "node": "Get useful data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get useful data": {
+      "main": [
+        [
+          {
+            "node": "Get Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Names": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Validate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Data": {
+      "main": [
+        [
+          {
+            "node": "Get Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Data1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Data": {
+      "main": [
+        [
+          {
+            "node": "Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse": {
+      "main": [
+        [
+          {
+            "node": "Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Task": {
+      "main": [
+        [
+          {
+            "node": "Parse Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Data": {
+      "main": [
+        [
+          {
+            "node": "Loop",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wajahat Bhai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop": {
+      "main": [
+        [
+          {
+            "node": "Sehar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sehar": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d18a96e2-0219-4ff9-a243-570e9b53c161",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "151305d708accaf9ba7df3ae300984e7c14a108b131ed2d081a3bd48f670f5c4"
+  },
+  "id": "JcgOF2mWCDWTm16d",
+  "tags": []
+}
