@@ -1,0 +1,7 @@
+selenium
+webdriver-manager
+python-dotenv
+pandas
+openpyxl
+pymongo
+
