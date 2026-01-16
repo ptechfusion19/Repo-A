@@ -1,0 +1,1 @@
+﻿Deployment notes for reverse sync validation
